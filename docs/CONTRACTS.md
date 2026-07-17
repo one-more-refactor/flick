@@ -15,10 +15,29 @@ Change this file first, code second.
   anonymous session); an account only adds cross-device sync + streaks history.
   Never pressure toward signup.
 - Accounts: email-first flow (password or email code), Google/GitHub OAuth, and
-  generic OIDC SSO (Authentik first). Everything currently built is FREE tier;
-  the free tier stays generous forever (unlimited reading, 100 stored books,
-  25 MB uploads). A paid tier may later add power integrations only — never
-  paywall what was free.
+  generic OIDC SSO (Authentik first).
+
+### Plans (defined v0.3.1 — presentation only, NO billing wired yet)
+
+**Binding principle: what's free stays free.** Features never move from the
+free tier to Pro; Pro only ever adds new power features on top.
+
+| | FREE (€0) | PRO (€4/month · €36/year) |
+|---|---|---|
+| Reader, engine, all 6 themes, flicker | ✓ | ✓ |
+| Stats, streaks, sessions | ✓ | ✓ |
+| Guest mode + account sync | ✓ | ✓ |
+| Paste / PDF / EPUB / TXT / clippings / URL import, search | ✓ | ✓ |
+| Public-domain shelf | ✓ | ✓ |
+| Stored books | 100 | unlimited |
+| Cloud imports (Dropbox / OneDrive / Kindle), when they land | — | ✓ |
+| Extension auto-capture library, when it lands | — | ✓ |
+
+- Until billing exists, Pro is shown as **SOON** in the UI and nothing is
+  enforced server-side (the 100-book cap is documented, not yet coded). When
+  enforcement lands it must fail with `403 {"error": …, "code": "book_limit"}`
+  — never delete or lock existing content.
+- Prices are the committed communication numbers; billing provider TBD.
 
 ## Reading timeline format
 
@@ -249,6 +268,33 @@ book = {
 - Paste with no `title`: server uses first ~40 chars of text.
 - All book routes are scoped to the session user; foreign ids → `404`.
 - Upload limit: 25 MB.
+
+## Rate limits
+
+Per-client limits on the abuse-prone endpoints. In-memory fixed-window
+counters, per server process (each replica counts independently); one bucket
+per (endpoint, client) pair, so hitting one endpoint's limit never blocks the
+others. Everything not listed is unlimited.
+
+| Endpoint | Limit |
+|---|---|
+| `POST /api/auth/login` | 10 / 5 min |
+| `POST /api/auth/register` | 10 / 5 min |
+| `POST /api/auth/code/verify` | 10 / 5 min |
+| `POST /api/auth/code/request` | 5 / 5 min |
+| `POST /api/auth/lookup` | 30 / 5 min |
+| `POST /api/auth/guest` | 20 / hour |
+| `POST /api/import/url` | 30 / hour |
+
+- Exceeding a limit → `429` with the standard `{"error": "..."}` body and a
+  `Retry-After` header (whole seconds until the window resets).
+- **Client key = client IP.** The FIRST `X-Forwarded-For` entry is trusted
+  ONLY when the direct peer is a private/loopback address (loopback, RFC1918,
+  100.64/10 CGNAT/tailnet, `::1`, `fc00::/7`) — i.e. the reverse proxy
+  (Caddy) in front; from any public peer the header is ignored and the peer
+  address itself is the key.
+- Fixed window means a worst-case 2× burst across a window boundary — fine
+  for abuse resistance; this is not traffic shaping.
 
 ## Server config (env)
 
