@@ -270,35 +270,45 @@ book = {
 
 SPA fallback: unknown non-`/api` GET paths serve `index.html` from `FLICK_WEB_DIST`.
 
-## Design tokens (see docs/mockup.html for the living reference)
+## Design tokens (web/src/app.css is the shipped implementation)
 
-| Token | Light | Dark |
-|---|---|---|
-| bg | `#FAFAF7` | `#0B0A0A` |
-| ink | `#141110` | `#F2EFEC` |
-| red (only accent) | `#E02D2D` | `#F53B30` |
-| dim (warm grey) | `#8A8380` | `#7D7672` |
-| line | `#E4E0DC` | `#242020` |
-| panel | `#FFFFFE` | `#121010` |
+Two orthogonal axes, both stamped on `<html>` (an inline `<head>` script stamps
+them from localStorage before first paint — no theme flash):
+
+- `data-mode = light | dark` — the "flicker". Stored as `settings.theme`
+  (`auto` follows `prefers-color-scheme` and is resolved by the client).
+- `data-theme = paper | signal | sage | tide | dusk | noir` — six curated,
+  hand-tuned themes (never a free color wheel). Stored as `settings.accent`
+  under the legacy slugs; the mapping lives ONLY in `web/src/lib/theme.svelte.ts`:
+  `paper↔red · signal↔ember · sage↔acid · tide↔cyan · dusk↔violet · noir↔mono`.
+
+Neutrals — warm for paper/sage/dusk, cool for signal/tide/noir:
+
+| Token | warm light | warm dark | cool light | cool dark |
+|---|---|---|---|---|
+| bg | `#F5F2EA` | `#0C0A08` | `#F2F2EF` | `#070707` |
+| panel | `#FFFFFF` | `#141110` | `#FFFFFF` | `#101010` |
+| ink | `#1A1512` | `#F2EDE5` | `#0C0C0B` | `#F3F3F1` |
+| dim | `#8C8378` | `#807769` | `#8B8B87` | `#797977` |
+| line | `#E7E1D6` | `#241F18` | `#E3E3DE` | `#1E1E1E` |
 
 - Monospace everywhere (`ui-monospace, "JetBrains Mono", "Cascadia Mono", "SF Mono", Menlo, Consolas, monospace`).
 - **One accent slot** (`--accent`): pivot letter, counters, progress, selection
-  marker. No other colors, ever. The slot is user-selectable from SIX curated
-  hand-tuned pairs (AA on both grounds) — never a free color wheel:
+  marker. No other colors, ever. AA on both grounds:
 
-  | id | light | dark |
+  | theme | light accent | dark accent |
   |---|---|---|
-  | `red` (default) | `#E02D2D` | `#F53B30` |
-  | `ember` | `#D96B00` | `#FF8A2A` |
-  | `acid` | `#3E8A00` | `#7ADB2E` |
-  | `cyan` | `#0071B8` | `#2DC7FF` |
-  | `violet` | `#7A3DD4` | `#A87BFF` |
-  | `mono` | `#141110` | `#F2EFEC` |
+  | `paper` (default) | `#D8342B` | `#F53B30` |
+  | `signal` | `#E5231B` | `#FF3B30` |
+  | `sage` | `#3E8A00` | `#7ADB2E` |
+  | `tide` | `#0071B8` | `#2DC7FF` |
+  | `dusk` | `#7A3DD4` | `#A87BFF` |
+  | `noir` | = ink | = ink |
 
-  Applied via `data-accent` on the root element. `mono` = accent equals ink;
-  the reader pivot letter then renders inverse-video (ink block, bg letter) so
-  it stays visible. Accent is used at full value or not at all — no tints, no
-  alphas.
+  `noir` = accent equals ink; the pivot letter then renders inverse-video
+  (ink block, bg letter) so it stays visible. `signal` is the Nothing-flavour
+  theme: it alone turns on the dot-matrix grid texture (`--tex: 1`). Accent is
+  used at full value or not at all — no tints, no alphas.
 - **NO glow effects. None.** No `text-shadow`, no colored `box-shadow`, no CRT
   scanlines, no blur halos — anywhere, either theme. Texture allowance: a flat
   dot-matrix grid (`radial-gradient` 1px dots at 5% ink, 18px cell) on
