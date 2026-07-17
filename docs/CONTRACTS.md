@@ -123,7 +123,7 @@ is, the controls/shortcuts, and how to ramp WPM. Deletable like any book.
 | `FLICK_ADDR` | listen address | `0.0.0.0:8484` |
 | `FLICK_DATA_DIR` | SQLite + storage dir | `./data` |
 | `FLICK_PUBLIC_URL` | external base URL (OIDC redirects) | `http://localhost:8484` |
-| `FLICK_WEB_DIST` | built web client dir to serve statically | `../web/dist` |
+| `FLICK_WEB_DIST` | built web client dir to serve statically | first of `./web/dist`, `../web/dist` containing `index.html` (so it works from repo root and from `server/`) |
 | `FLICK_OIDC_ISSUER` | OIDC issuer URL (enables SSO when set) | — |
 | `FLICK_OIDC_CLIENT_ID` / `FLICK_OIDC_CLIENT_SECRET` | OIDC client creds | — |
 | `FLICK_OIDC_NAME` | SSO button label | `SSO` |
