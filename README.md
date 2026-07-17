@@ -7,8 +7,10 @@ letter your eye locks onto so it never has to move. Comfortable up to 800 WPM.
 
 ## Status
 
-v0.1 (in progress): web client + server. Paste text or upload a PDF, server
-parses it into a reading timeline, read it in the browser, position syncs.
+v0.2 shipped: onboarding, server-side settings, richer library, phone-native
+reader, PWA. v0.3 in progress: guest-first reading (no account needed),
+email-first auth + Google/GitHub, stats/streaks/sessions, free public-domain
+catalog, EPUB/URL/Kindle-clippings import, accent themes, i18n (en/de).
 
 ## Architecture
 
