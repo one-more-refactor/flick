@@ -7,10 +7,10 @@ letter your eye locks onto so it never has to move. Comfortable up to 800 WPM.
 
 ## Status
 
-v0.2 shipped: onboarding, server-side settings, richer library, phone-native
-reader, PWA. v0.3 in progress: guest-first reading (no account needed),
-email-first auth + Google/GitHub, stats/streaks/sessions, free public-domain
-catalog, EPUB/URL/Kindle-clippings import, accent themes, i18n (en/de).
+v0.3 shipped: guest-first reading (no account needed), email-first auth +
+Google/GitHub + email codes, stats/streaks/sessions, free public-domain
+catalog, PDF/EPUB/txt/URL/Kindle-clippings import, full-text library search,
+six themes × light/dark flicker, i18n (en/de), phone-native reader, PWA.
 
 ## Architecture
 
