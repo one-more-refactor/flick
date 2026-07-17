@@ -17,27 +17,40 @@ Change this file first, code second.
 - Accounts: email-first flow (password or email code), Google/GitHub OAuth, and
   generic OIDC SSO (Authentik first).
 
-### Plans (defined v0.3.1 — presentation only, NO billing wired yet)
+### Editions & plans (v0.4)
 
-**Binding principle: what's free stays free.** Features never move from the
-free tier to Pro; Pro only ever adds new power features on top.
+flick ships in two **editions**, selected by env `FLICK_EDITION`
+(`selfhost` — the default — or `hosted`):
 
-| | FREE (€0) | PRO (€4/month · €36/year) |
+- **selfhost**: everything free forever, nothing enforced, no strings. Where
+  the hosted UI shows Pro, the self-hosted UI shows **CONTRIBUTE** — a link to
+  the GitHub repo. Forking encouraged. Developers are a primary audience.
+- **hosted** (flick.cr3do.net and future cloud): the plans below apply.
+
+**Binding principles:** what's free stays free — features never move from free
+to Pro. **No lifetime tier, ever** (a lifetime price on an everyday habit
+product with ongoing storage costs is dishonest pyramid economics). Pro is
+framed as supporting an indie open-source project, not as a paywall.
+
+| hosted edition | FREE (€0) | PRO (€4/month · €36/year) |
 |---|---|---|
-| Reader, engine, all 6 themes, flicker | ✓ | ✓ |
-| Stats, streaks, sessions | ✓ | ✓ |
-| Guest mode + account sync | ✓ | ✓ |
-| Paste / PDF / EPUB / TXT / clippings / URL import, search | ✓ | ✓ |
-| Public-domain shelf | ✓ | ✓ |
-| Stored books | 100 | unlimited |
+| Reader, engine, all themes, stats, streaks, guest mode, sync, search, shelf | ✓ | ✓ |
+| All import formats (paste / PDF / EPUB / TXT / clippings / URL) | ✓ | ✓ |
+| Storage | **uncapped** | uncapped |
+| Uploads per week | **15** | unlimited |
 | Cloud imports (Dropbox / OneDrive / Kindle), when they land | — | ✓ |
 | Extension auto-capture library, when it lands | — | ✓ |
 
-- Until billing exists, Pro is shown as **SOON** in the UI and nothing is
-  enforced server-side (the 100-book cap is documented, not yet coded). When
-  enforcement lands it must fail with `403 {"error": …, "code": "book_limit"}`
-  — never delete or lock existing content.
-- Prices are the committed communication numbers; billing provider TBD.
+- The weekly upload counter covers user-sourced ingestion (paste, file, URL,
+  extension HTML). Catalog adds and the intro book never count. Week =
+  ISO-8601 week, UTC. Exceeding → `403 {"error": …, "code": "upload_limit"}`.
+  Existing content is never deleted or locked.
+- `users.plan`: `"free"` (default) or `"pro"`. No API can set it (manual/admin
+  only until billing exists). Pro is shown as **SOON** in the hosted UI.
+- The user JSON gains `"uploads": {"used": n, "limit": 15 | null}` (`null` =
+  unlimited: selfhost edition or pro plan).
+- `GET /api/meta` (public, no auth): `{"edition": "selfhost" | "hosted",
+  "version": "<crate version>"}` — clients switch Pro/Contribute on this.
 
 ## Reading timeline format
 
@@ -300,6 +313,7 @@ others. Everything not listed is unlimited.
 
 | Var | Meaning | Default |
 |---|---|---|
+| `FLICK_EDITION` | `selfhost` or `hosted` (see Editions & plans) | `selfhost` |
 | `FLICK_ADDR` | listen address | `0.0.0.0:8484` |
 | `FLICK_DATA_DIR` | SQLite + storage dir | `./data` |
 | `FLICK_PUBLIC_URL` | external base URL (OIDC redirects) | `http://localhost:8484` |
@@ -398,6 +412,31 @@ Neutrals — warm for paper/sage/dusk, cool for signal/tide/noir:
 - **Phone-native**: responsive single-column layout; 44px+ touch targets; `viewport-fit=cover` + safe-area insets (reader controls sit above the home indicator); reader is full-viewport on phones with fixed bottom controls.
 - **PWA**: `manifest.webmanifest` (name flick, display standalone, theme/background per scheme, maskable icons), service worker with cache-first app shell and NO caching of `/api/*`. App must remain fully functional when the SW is unsupported.
 - **Theme setting**: `settings.theme` applies `data-theme` on the root element; `auto` follows `prefers-color-scheme`.
+
+## Web client v0.4 additions
+
+- **Real URLs, working back button.** The client maps views onto paths via the
+  History API: `/` (landing when logged out, library when authed), `/read/:id`,
+  `/stats`, `/auth`. Navigation pushes state; browser back/forward (popstate)
+  drives the state machine; deep links resolve on load (`/read/:id` with no
+  session → landing). The server's SPA fallback already serves index.html for
+  all non-`/api` paths.
+- **WPM ramp ("car motor").** On every play start (first play AND resume), the
+  effective wpm ramps from 60% of the target to 100% over the first ~3 seconds
+  of active playback (linear, floor 100 wpm). The slider always shows/sets the
+  target. Seeking does not reset the ramp; pausing and resuming does. This is
+  playback pacing (client behavior), not engine logic — the timeline is
+  untouched.
+- **Landing quick-read.** The landing accepts a file drop / picker directly:
+  guest session is minted lazily, the file imports, and the reader opens —
+  upload-to-reading in one gesture. Same for pasted text via the add panel.
+- **Edition awareness.** Client fetches `GET /api/meta`; `selfhost` replaces
+  every Pro surface with CONTRIBUTE → the GitHub repo. `hosted` shows the
+  plans strip and, when the weekly upload limit is hit, a friendly limit note
+  (never a lock on existing content).
+- Defaults doctrine: every control's initial position is a decision — wpm
+  seeds from account settings (or 350), theme/mode follow system, language
+  follows browser. No control may default to a degenerate value.
 
 ## Web client v0.3
 
