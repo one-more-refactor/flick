@@ -202,12 +202,13 @@ flow's panels).
 
 | Method & path | Body | Response |
 |---|---|---|
-| `PATCH /api/auth/me` | any subset of `{username, name, onboarded, settings: {wpm?, theme?, accent?, lang?}}` | `200 {user}` |
+| `PATCH /api/auth/me` | any subset of `{username, name, onboarded, avatar?, settings: {wpm?, theme?, accent?, lang?}}` | `200 {user}` |
 
 - `username`: 2–24 chars, `[a-zA-Z0-9_-]`, stored as given, unique not required (it's a display handle, email stays the identifier). `400` with a helpful message on invalid.
+- `avatar` (v0.8): a square profile picture as a self-contained `data:image/...;base64,...` URL, or `""` to clear it. Capped at ~150 KB (`400` otherwise). Returned on the user object as `"avatar"` (null when unset). Clients downscale to a small square before sending.
 - `settings.wpm`: int 100–1200. `settings.theme`: `"auto" | "light" | "dark"`.
 - `settings.accent`: `"red" | "ember" | "acid" | "cyan" | "violet" | "mono"` (curated pairs, see Design tokens). Default `"red"`.
-- `settings.lang`: `"auto" | "en" | "de"`. Default `"auto"` (client resolves via `navigator.language`).
+- `settings.lang`: `"auto" | "en" | "de" | "es"` (v0.8 adds Spanish). Default `"auto"` (client resolves via `navigator.language`). Engine pacing: `en`/`de` use validated Zipf tables; `es` is detected for routing but paced by the length + structure model only (no frequency signal until a validated ES table ships).
 - `onboarded`: client sets `true` when the intro flow completes **or is skipped**. New users start `false`; clients route un-onboarded users into the intro flow after auth (local register AND first SSO login). The flow always shows a small `SKIP_` (top corner, quiet) — skipping sets `onboarded: true` with defaults.
 - Settings are server-side so they follow the account across devices; clients cache in localStorage (for guests localStorage is the primary store until they upgrade).
 
@@ -541,17 +542,31 @@ on the stats page, and the top bar shows remaining Pro days + one square
 per qualified invite next to the PRO badge; during a referral event
 non-Pro users see an event chip linking to /invite.
 
-### Share links (v0.6)
+### Share links (v0.6, share_mode v0.8)
 
 | Method & path | Body | Response |
 |---|---|---|
-| `POST /api/books/:id/share` | — | `200 {token, path: "/s/:token"}` (idempotent; live books only) |
+| `POST /api/books/:id/share` | `{mode?: "import" \| "read"}` (default `"import"`) | `200 {token, path: "/s/:token", mode}` (idempotent; live books only; re-posting flips the mode on the same token) |
 | `DELETE /api/books/:id/share` | — | `204` revoke (`404` if none) |
-| `GET /api/shared/:token` | — | `200 {title, author, word_count, category}` — **public, no auth** |
-| `POST /api/shared/:token/import` | — | `201 {book}` — copies timeline+text into the caller's library, `source: "shared"`, **never counts toward upload limits** |
+| `GET /api/shared/:token` | — | `200 {title, author, word_count, category, mode}` — **public, no auth** |
+| `GET /api/shared/:token/timeline` | — | `200` playable timeline blob — **public, no auth** (for read-only recipients) |
+| `POST /api/shared/:token/import` | — | `201 {book}` (import mode) — copies timeline+text into the caller's library, `source: "shared"`, **never counts toward upload limits**; `403 {code:"read_only"}` when the link is read-only |
+
+- **share_mode (v0.8):** the owner chooses per link whether a recipient may copy the book into their own library (`"import"`, the default) or only read it in place (`"read"`). Read-only recipients play the public `/timeline` with no library copy and no account required; `/import` is refused with `403 {code:"read_only"}`.
 
 User JSON carries `"plan"` from v0.6. `GET /api/sessions` applies the free
 hosted history window (90 days) server-side.
+
+## Web client v0.8 additions
+
+- **Landing redesign:** the guest door is rebuilt as a first-impression page — auto-running hero reader (now with an instrument telemetry row), a `how it works` band (the single inverse-video surface: one-word-at-a-time, the ORP pivot column, the pace meter), a dot-matrix `numbers` band, the catalog shelf as library rows, edition-aware plans, and a dotted-leader spec sheet. Motion (scroll-triggered reveals + smooth scroll) uses **GSAP + Lenis**, lazy-loaded into a separate chunk and gated behind `prefers-reduced-motion`; no gradient/glow/shadow, one accent, square. Same `Landing` props as before.
+- **Spanish (`es`)** joins the language picker (`AUTO · EN · DE · ES`); full `es` string set (`i18n.es.ts`), merged over the `en` fallback in `t()`.
+- **Reader:** an animated morphing play/pause/replay **icon** replaces the text button; an optional **context/sentence ribbon** (toggle in the customisation panel) shows the live word inside its sentence, each word click-to-seek. Position still syncs every 5s while playing, plus on `pagehide`.
+- **Read-only shares:** `share_mode: "read"` links open an **ephemeral reader** — public `/shared/:token/timeline`, no library copy, no position/session persisted (`ephemeral` prop).
+- **Share popup** (`ShareMenu`): a permission switch (add-to-library vs read-only, sets `share_mode`), copy link, the native OS share sheet (`navigator.share`, shown only when available), and an invite-a-friend link.
+- **Top bar:** a remaining-uploads meter (hosted free), a more satisfying GitHub button (dart + star micro-interaction), an animated theme picker (caret + staggered rows), and a square **avatar button** (profile picture, or an initial) opening an account menu (stats · invite · log out). Guests still get `Create account`.
+- **Avatar:** uploaded during onboarding — the client center-crops + downscales to a ≤160px square JPEG `data:` URL, `PATCH /api/auth/me {avatar}`.
+- **Register:** an account-info perks panel (sync · streak · stats/wrapped · friends/invites/Pro credits). Invite page reworked into a clear 3-step "how it works".
 
 ## Web client v0.6 additions
 
