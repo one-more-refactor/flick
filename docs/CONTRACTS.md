@@ -471,6 +471,33 @@ Neutrals — warm for paper/sage/dusk, cool for signal/tide/noir:
 - **Pre-seeded library.** Because every library starts with the intro + full
   catalog, the landing catalog picks treat `409 already in library` as
   success and open the existing copy (`ApiError.bookId`).
+- **Trash-bin soft delete (v0.4.3).** `DELETE /api/books/:id` moves a live
+  book to the trash (`books.deleted_at`); trashed books vanish from every
+  live surface (list, get, timeline, text, position, search, catalog-slug
+  idempotency, stats `books_finished`, upload counting — so trashing refunds
+  the week's upload slot). `GET /api/books/trash` →
+  `{items: [{id, title, author, word_count, deleted_at, expires_at}],
+  retention_days: 30}` (newest first). `POST /api/books/:id/restore` and
+  `DELETE /api/books/:id/purge` (both 204/404; only trashed books qualify).
+  Auto-purge sweeps rows older than 30 days whenever the user's trash is
+  touched. Session summaries keep the real title while a book sits in the
+  trash; only purging degrades it to `DELETED`.
+- **Tags (v0.4.3).** `books.tags` (JSON array of strings) serialized on
+  every book. Auto-tagged at creation with the book's `category` when it has
+  one (catalog seeds included); `PUT /api/books/:id/tags {tags: [...]}` →
+  `200 {book}` replaces them (≤12 tags, each 1–24 chars, trimmed, deduped
+  case-insensitively, order preserved; violations are 400s). The web library
+  shows a tag filter bar (union of live tags) once there is more than one
+  distinct tag, plus per-row inline tag editing.
+- **Guided add wizard (v0.4.3, web).** The `+ add` control is a real primary
+  button opening a full-screen guided flow: step 1 pick a source (paste /
+  file / web link / cloud storage / built-in catalog), step 2 the source's
+  input (+ optional title and tags), then import → straight into the reader.
+  Esc/×/back at every step; the landing quick-drop stays untouched. "Cloud
+  storage" accepts public Dropbox / Google Drive / OneDrive share links —
+  the client rewrites them to direct-download URLs and feeds
+  `POST /api/import/url` (no OAuth, no keys; private files need the user to
+  create a share link first).
 - **Stats totals (v0.4.2).** `GET /api/stats` additionally returns
   `"totals": {time_ms, sessions, avg_wpm, books_finished, active_days,
   best_day: {day, words} | null}` aggregated server-side (`avg_wpm` is
