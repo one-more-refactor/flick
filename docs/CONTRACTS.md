@@ -495,6 +495,52 @@ Neutrals — warm for paper/sage/dusk, cool for signal/tide/noir:
   seeds from account settings (or 350), theme/mode follow system, language
   follows browser. No control may default to a degenerate value.
 
+### Referrals, events & Pro credits (v0.7)
+
+Pro time is **credit-based**: `users.pro_until` (epoch secs). Effective Pro =
+paid plan OR `pro_until > now` OR a running global `free_pro` event. User
+JSON carries `"pro_active"` and `"pro_days"` (remaining credit days).
+
+**Referrals**: every user has a personal code (lazily minted). `/r/:code`
+attributes signups: the client stores the code and passes `{"ref": code}` to
+`POST /api/auth/guest` or `/api/auth/register`; a guest's attribution
+follows them through the account merge. A referral **qualifies** when the
+invitee has a real account and has hit the 300-word goal on **3 distinct
+days**; payouts (30 Pro days to BOTH sides) run lazily on
+`GET /api/referral` and only while a `referral` event is active. Same-IP
+self-invites are permanently rejected ("unknown" IPs are never deduped).
+
+| Method & path | Response |
+|---|---|
+| `GET /api/referral` | `200 {code, path, invited, pending, qualified, reward_days, qualify_days, event: {title, ends_at} | null}` (403 for guests) |
+| `GET /api/events/active` | `200 [{kind, title, ends_at}]` — public |
+| `POST /api/admin/events` | `201 {event}` — `{kind: referral|free_pro|promo, title, starts_at, ends_at, payload?}` |
+| `GET /api/admin/events` · `DELETE /api/admin/events/:id` | list / end events |
+
+Admin routes require `Authorization: Bearer $FLICK_ADMIN_TOKEN`
+(constant-time compare; 404 when the env var is unset). The admin *panel*
+stays parked — events are curl-able today, UI later.
+
+### Social layer (v0.7)
+
+Friends connect via the personal link `/f/:code` (possession = consent,
+auto-mutual, one row per pair). Friends see **aggregates only** — words,
+streaks, time — never titles or content (binding privacy rule).
+
+| Method & path | Response |
+|---|---|
+| `GET /api/friends/link` | `200 {code, path}` (403 for guests) |
+| `POST /api/friends/add` | `{code}` → `204` (404 unknown, 409 own code) |
+| `GET /api/friends` | `200 [{id, name, me, week_words, total_words, today_words, streak, best_streak}]` — self first |
+| `DELETE /api/friends/:id` | `204` |
+| `GET /api/wrapped?year=YYYY` | `200 {year, total_words, active_days, best_day, best_streak, top_month, top_weekday, sessions, time_ms, avg_wpm, books_finished}` |
+
+Web: `/invite` (invite page: link, qualified/pending squares, event
+countdown, rules), `/wrapped` (the yearly breakdown), a friends scoreboard
+on the stats page, and the top bar shows remaining Pro days + one square
+per qualified invite next to the PRO badge; during a referral event
+non-Pro users see an event chip linking to /invite.
+
 ### Share links (v0.6)
 
 | Method & path | Body | Response |
