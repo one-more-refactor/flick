@@ -4,3 +4,4 @@ web/dist/
 /data
 .env
 *.local
+data-hosted-demo/

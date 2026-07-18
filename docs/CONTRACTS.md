@@ -137,9 +137,10 @@ unauthenticated visitor adds/opens a book. A guest is a real user row
 (`guest: true`, `email: null`) — books, positions, stats and settings all work.
 When a guest registers or logs in **with the guest session cookie still
 present**, the guest's books and stats merge into the target account (guest row
-is deleted; on id collision existing account data wins). Guests never receive
-the intro starter book seeding — they get the intro book on their first real
-book add instead (so an empty guest library never exists).
+is deleted; on id collision existing account data wins). Since v0.4.1 guests
+are seeded with the full starter library at creation (see Starter library);
+the lazy seed-on-first-add path remains only as a backstop for pre-v0.4.1
+guest rows that are still empty.
 
 **Providers.** Local passwords: argon2id. `identities` table links
 `(provider, sub) → user`: `oidc` (generic, Authentik first) and `google` use
@@ -165,14 +166,21 @@ flow's panels).
 - `onboarded`: client sets `true` when the intro flow completes **or is skipped**. New users start `false`; clients route un-onboarded users into the intro flow after auth (local register AND first SSO login). The flow always shows a small `SKIP_` (top corner, quiet) — skipping sets `onboarded: true` with defaults.
 - Settings are server-side so they follow the account across devices; clients cache in localStorage (for guests localStorage is the primary store until they upgrade).
 
-### Starter book
+### Starter library (v0.4.1)
 
-Every newly created **non-guest** user is seeded with a built-in book titled
-`WELCOME TO FLICK` (`source: "intro"`), parsed through flick-core like any other
-book. Its text lives in the server binary and teaches: what the pivot letter
-is, the controls/shortcuts, and how to ramp WPM. Deletable like any book.
-Guests get it added alongside their first own book instead (an empty guest
-library never exists). The guest→account merge never duplicates it.
+Every newly created user — register, first SSO login, **and guest creation** —
+is seeded with a default library: the built-in `WELCOME TO FLICK` intro book
+(`source: "intro"`) plus **every catalog work** (`source: "catalog"`, normal
+`catalog_slug`). No library ever starts empty. The intro's text lives in the
+server binary and teaches: what the pivot letter is, the controls/shortcuts,
+and how to ramp WPM. All seeded books are deletable like any book (catalog
+works can be re-added via `/api/catalog/:slug/add`); none of them ever count
+toward upload limits. Seeded `created_at` values are staggered (intro newest,
+then manifest order) so the default list order is stable.
+
+The guest→account merge never duplicates seeds: at most one intro survives
+(target's wins), and for each catalog slug present on both sides the copy with
+the **greater reading position** survives.
 
 ### Catalog (free content, no auth)
 
@@ -187,7 +195,9 @@ server-side), then copied cheaply into a user's library.
 
 Catalog books get `source: "catalog"`. Adding is idempotent per user
 (`409` carries the existing book id in the error message body:
-`{"error": "...", "book_id": "..."}`).
+`{"error": "...", "book_id": "..."}`). Since libraries are pre-seeded with the
+whole catalog (v0.4.1), clients treat a `409` as success and open the existing
+copy via its `book_id`.
 
 ### Stats & streak
 
@@ -437,6 +447,30 @@ Neutrals — warm for paper/sage/dusk, cool for signal/tide/noir:
 - Defaults doctrine: every control's initial position is a decision — wpm
   seeds from account settings (or 350), theme/mode follow system, language
   follows browser. No control may default to a degenerate value.
+
+## Web client v0.4.1 additions
+
+- **Top bar (full).** Right side, in order: `GITHUB ↗` external link (always);
+  `GO PREMIUM` (hosted edition only — selfhost never shows a Pro surface;
+  scrolls to the landing plans strip); the light/dark **flip cube**; then auth
+  controls — signed out: quiet `LOG IN` link + primary `CREATE ACCOUNT`
+  button; guest: `CREATE ACCOUNT`; signed in: `LOG OUT`. On narrow viewports
+  the premium and login links yield first; `CREATE ACCOUNT` stays.
+- **Flip cube.** The light/dark toggle is a 3D cube (flat faces, 1px borders,
+  no shadows) that rotates 90° forward on every flick to reveal the other
+  side's face (`LIGHT`/`DARK`). Face shown always matches the resolved mode
+  (an effect re-syncs if the system theme flips it externally).
+  `prefers-reduced-motion`: no rotation transition.
+- **Hover language (uiverse-inspired, flat).** `CREATE ACCOUNT`: accent block
+  slides in behind the label, text inverts — no gradients, no shadows.
+  Top-bar links get bracket hovers (`[ ]` fade in, accent). Delete `×`
+  buttons: half-turn + inverse-video accent square on hover.
+- **Armed delete row.** Clicking `×` arms the whole row: blinking accent
+  outline (steps, cursor-style), accent-tinted background, struck-through
+  title, inline `delete? y/n`. `n`, or deleting/canceling, disarms.
+- **Pre-seeded library.** Because every library starts with the intro + full
+  catalog, the landing catalog picks treat `409 already in library` as
+  success and open the existing copy (`ApiError.bookId`).
 
 ## Web client v0.3
 
