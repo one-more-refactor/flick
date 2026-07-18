@@ -5,6 +5,10 @@ on:
   schedule:
     - cron: "17 4 * * 1" # weekly, Monday 04:17 UTC
   workflow_dispatch:
+permissions:
+  contents: read
+  checks: write # audit-check reports results as a check run
+  issues: write # scheduled runs open an issue on new advisories
 jobs:
   cargo-audit:
     runs-on: ubuntu-latest
@@ -13,3 +17,8 @@ jobs:
       - uses: rustsec/audit-check@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          # RUSTSEC-2023-0071 (rsa: Marvin timing sidechannel, no patch
+          # released): flick only VERIFIES RSA signatures on OIDC ID tokens
+          # (public-key ops); we never hold or use an RSA private key, so the
+          # private-key timing leak does not apply.
+          ignore: RUSTSEC-2023-0071
