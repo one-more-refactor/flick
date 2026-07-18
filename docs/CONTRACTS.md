@@ -484,6 +484,22 @@ Neutrals — warm for paper/sage/dusk, cool for signal/tide/noir:
   seeds from account settings (or 350), theme/mode follow system, language
   follows browser. No control may default to a degenerate value.
 
+## Web client v0.5.1 additions
+
+- **Premium page.** `/premium` is a real route (History API, back button
+  works). Hosted edition: FREE/PRO comparison table, €4/mo dot-matrix hero,
+  SOON CTA, FAQ (what's-free-stays-free, no-lifetime rationale,
+  where-the-money-goes). Selfhost edition: the same URL is the CONTRIBUTE
+  page (star/fork/PR cards + self-hosting guide) — no Pro surface ever.
+  The top-bar GO PREMIUM (hosted) navigates here.
+- **Streak chip.** Signed-in users with a streak ≥ 1 get a top-bar chip:
+  dot-matrix streak count + a cursor glyph — blinking `_` while today's
+  goal is open (dashed border), a full stop `.` once it's met (solid,
+  tinted). Links to /stats. The library streak tile gains a today-goal
+  mini progress bar. Habit surfaces are visible, never modal.
+- **Brand polish.** Per-route `document.title`; meta description + OG tags;
+  `robots.txt` (allow all, disallow /api/).
+
 ## Web client v0.4.1 additions
 
 - **Top bar (full).** Right side, in order: `GITHUB ↗` external link (always);
