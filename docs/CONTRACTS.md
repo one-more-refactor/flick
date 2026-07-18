@@ -471,6 +471,19 @@ Neutrals — warm for paper/sage/dusk, cool for signal/tide/noir:
 - **Pre-seeded library.** Because every library starts with the intro + full
   catalog, the landing catalog picks treat `409 already in library` as
   success and open the existing copy (`ApiError.bookId`).
+- **Stats totals (v0.4.2).** `GET /api/stats` additionally returns
+  `"totals": {time_ms, sessions, avg_wpm, books_finished, active_days,
+  best_day: {day, words} | null}` aggregated server-side (`avg_wpm` is
+  duration-weighted from the session log; `books_finished` counts books with
+  `position >= word_count > 0`).
+- **Playful pass (v0.4.2, web).** Delete is a trash-can glyph (lid opens on
+  hover, inverse-video accent); the library home drops row numbers and leads
+  with the last 3 read books as cards (progress bar + resume) above a
+  compact ALL list; the six-theme picker moves from the footer to a top-bar
+  popover (swatch button → panel); the streak overlay is a real celebration
+  (count-up, flat square confetti, accent flash — still skippable, <4s);
+  buttons share the slide-fill hover + press-down active language and meet
+  44px touch targets on phone. Still: no gradients, no shadows, no glows.
 - **Friction pass.** Library list order puts the reading front and center:
   continue card (most recent unfinished), then in-progress books by
   `last_read_at` desc, then unread (server order), finished last. Guests see
