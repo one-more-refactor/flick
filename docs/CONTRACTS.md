@@ -32,14 +32,25 @@ to Pro. **No lifetime tier, ever** (a lifetime price on an everyday habit
 product with ongoing storage costs is dishonest pyramid economics). Pro is
 framed as supporting an indie open-source project, not as a paywall.
 
+**Plan-split principle (v0.6, binding):** in an AGPL app, client-side gates
+are fiction — any fork removes them. Pro therefore gates only things that
+cost the server real money or compute and are enforced **server-side**:
+upload volume, history retention, analytics. The entire reading experience —
+every client (web, phone, future native, the browser extension), every
+reader feature (zen mode, customisation, navigation), every import path,
+sharing, tags — is free for everyone, forever.
+
 | hosted edition | FREE (€0) | PRO (€4/month · €36/year) |
 |---|---|---|
-| Reader, engine, all themes, stats, streaks, guest mode, sync, search, shelf | ✓ | ✓ |
-| All import formats (paste / PDF / EPUB / TXT / clippings / URL) | ✓ | ✓ |
+| Reader, engine, all themes, zen mode, reader customisation, stats, streaks, guest mode, sync, search, shelf | ✓ | ✓ |
+| **All clients** — web, phone, browser extension (when it lands) | ✓ | ✓ |
+| All import formats (paste / PDF / EPUB / TXT / clippings / URL / cloud links) + bulk import (≤50 files) | ✓ | ✓ |
+| Share links (send a book, recipients read + import instantly) | ✓ | ✓ |
 | Storage | **uncapped** | uncapped |
 | Uploads per week | **15** | unlimited |
-| Cloud imports (Dropbox / OneDrive / Kindle), when they land | — | ✓ |
-| Extension auto-capture library, when it lands | — | ✓ |
+| Reading history (sessions) | last **90 days** | unlimited |
+| Deep reading insights (server-computed behaviour/trend analytics), when they land | — | ✓ |
+| Supporting the devs | — | ♥ |
 
 - The weekly upload counter covers user-sourced ingestion (paste, file, URL,
   extension HTML). Catalog adds and the intro book never count. Week =
@@ -483,6 +494,50 @@ Neutrals — warm for paper/sage/dusk, cool for signal/tide/noir:
 - Defaults doctrine: every control's initial position is a decision — wpm
   seeds from account settings (or 350), theme/mode follow system, language
   follows browser. No control may default to a degenerate value.
+
+### Share links (v0.6)
+
+| Method & path | Body | Response |
+|---|---|---|
+| `POST /api/books/:id/share` | — | `200 {token, path: "/s/:token"}` (idempotent; live books only) |
+| `DELETE /api/books/:id/share` | — | `204` revoke (`404` if none) |
+| `GET /api/shared/:token` | — | `200 {title, author, word_count, category}` — **public, no auth** |
+| `POST /api/shared/:token/import` | — | `201 {book}` — copies timeline+text into the caller's library, `source: "shared"`, **never counts toward upload limits** |
+
+User JSON carries `"plan"` from v0.6. `GET /api/sessions` applies the free
+hosted history window (90 days) server-side.
+
+## Web client v0.6 additions
+
+- **Top bar v2.** Left cluster: `FLICK_` mark + GO PREMIUM (hosted; replaced
+  by a `PRO_` badge when `uploads.limit` is null on hosted). Right cluster:
+  streak chip · GITHUB · theme chip · flip cube (**unchanged by decree**) ·
+  auth. The streak chip is a mini flip element: click quarter-flips it
+  cube-style between the streak face and a today-progress face.
+- **Uploads bar.** The hosted allowance renders as a small bar next to ADD
+  (fill = used/15) that expands on hover to show the numbers.
+- **Guest banner.** Solid accent presence (left bar + tinted ground + real
+  button), not a whisper.
+- **Stats strip** moved to the top of the library (compact row under the
+  header); the ALL list follows content.
+- **Delete effect**: CRT power-off — the row collapses to a scanline, the
+  line shrinks toward the trash side, gone.
+- **Selection mode.** A quiet `select` toggle in the list header; rows
+  toggle square marks; a sticky action bar offers bulk to-trash and bulk
+  tag-add. Bulk ops are sequential client-side API calls.
+- **Share.** Each row (between the % and the trash can) gets a share button:
+  mints the link, copies it to the clipboard, shows a ✓. `/s/:token` is a
+  public route: preview card → START READING mints a guest, imports the
+  copy, and opens the reader.
+- **Bulk file import.** The wizard's file step accepts up to 50 files
+  (multi-select or drop); sequential upload with an n/m progress readout;
+  a single file still lands in the reader, several land in the library.
+- **Reader v0.6:** `zen mode` (z key or button — chrome fades away, word +
+  thin progress only, any input returns); reader customisation popover
+  (font size S/M/L/XL, guides on/off — localStorage, per device); the
+  progress bar is a scrubber (click/drag seeks, position preview while
+  scrubbing); the WPM slider gets the wave — ticks near the thumb lift as
+  it passes, and the value pops on change.
 
 ## Web client v0.5.1 additions
 
