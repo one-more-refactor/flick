@@ -471,6 +471,13 @@ Neutrals — warm for paper/sage/dusk, cool for signal/tide/noir:
 - **Pre-seeded library.** Because every library starts with the intro + full
   catalog, the landing catalog picks treat `409 already in library` as
   success and open the existing copy (`ApiError.bookId`).
+- **Friction pass.** Library list order puts the reading front and center:
+  continue card (most recent unfinished), then in-progress books by
+  `last_read_at` desc, then unread (server order), finished last. Guests see
+  a quiet persistence hint ("reading lives only in this browser") linking to
+  the auth page — never a modal or a gate. The auth page carries a one-line
+  pitch (library/position/streak on every device); guests additionally get
+  the merge reassurance ("your current reading comes with you").
 
 ## Web client v0.3
 
