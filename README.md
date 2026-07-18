@@ -1,139 +1,143 @@
+<div align="center">
+
 # flick_
 
-Speed reading, self-hosted. Words flash one at a time, anchored on their
-optimal recognition point — the red letter your eye locks onto so it never has
-to move (RSVP with ORP alignment). Comfortable up to 800 WPM.
+**read it in a flick** — a fast, open-source, self-hostable speed-reading app.
 
-flick is **guest-first**: visitors read instantly without an account. An
-account only adds cross-device sync and streak history. It holds two things
-under one umbrella — documents you must get through faster, and books you love
-reading. Same engine, same library.
+[**myflick.app**](https://myflick.app) · [self-host](#self-hosting) · [architecture](#how-it-works) · [contracts](docs/CONTRACTS.md) · [privacy](docs/legal/PRIVACY.md)
 
-## Features
+[![license: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-red)](LICENSE)
+[![self-hostable](https://img.shields.io/badge/self--hostable-yes-red)](#self-hosting)
+[![guest-first](https://img.shields.io/badge/guest--first-no%20signup-red)](#how-your-reading-syncs)
 
-- RSVP reader with ORP pivot alignment and per-word timing weights
-  (punctuation, word length, paragraph breaks) — vsync-locked playback,
-  150–800 WPM
-- Import: paste, PDF, EPUB, TXT, URL (SSRF-guarded fetch), Kindle
-  `My Clippings.txt`
-- Guest sessions, email-first auth (password or mailed code), Google/GitHub
-  sign-in, generic OIDC SSO (Authentik-tested)
-- Stats, streaks, reading sessions; full-text library search; position sync
-- Free public-domain catalog embedded in the binary
-- Six themes × light/dark, monospace flipper-style UI, i18n (en/de),
-  phone-native layout, PWA
-- Single binary + one SQLite file. No external services required.
+![the flick reader](docs/screenshots/reader.png)
 
-## Self-host quickstart
+</div>
 
-Prerequisites: [Rust](https://rustup.rs) (stable) and [Bun](https://bun.sh).
-SQLite is bundled into the binary — nothing to install.
+## What is flick?
 
-```sh
-git clone https://github.com/one-more-refactor/flick && cd flick
-cargo build --release -p flick-server
-cd web && bun install && bun run build && cd ..
-./target/release/flick-server        # http://localhost:8484
+flick shows you one word at a time, each anchored on the **red pivot letter your eye locks onto** — so your gaze never has to move. That's RSVP reading with **Optimal Recognition Point** alignment, and it's comfortable well past 400 WPM.
+
+But a gimmick that flashes words isn't enough. flick *paces* them: rare words linger, common ones fly, long words split, sentences breathe. The result reads like thought, not a metronome.
+
+- **Guest-first.** Start reading in one tap — no account. Sign up later and your library follows you.
+- **Your whole library.** Paste, PDF, EPUB, `.txt`, Kindle clippings, or a URL. Documents you need to get through and books you love — same engine, same shelf.
+- **A habit, not a party trick.** Day streaks, a daily goal, real stats, a year-in-review.
+- **Yours.** Open source (AGPL-3.0), self-hostable in one command, privacy-first — IPs are pseudonymised, and account deletion + data export are first-class.
+
+## Try it
+
+|  | |
+|---|---|
+| **Hosted** | [**myflick.app**](https://myflick.app) — free, no account needed. |
+| **Self-host** | One command → [jump to Self-hosting](#self-hosting). Everything free. |
+
+<table>
+<tr>
+<td width="50%"><img src="docs/screenshots/library.png" alt="library"><br><em>Your library — seeded with public-domain classics.</em></td>
+<td width="50%"><img src="docs/screenshots/stats.png" alt="stats"><br><em>Streaks, goals, and reading stats.</em></td>
+</tr>
+</table>
+
+## How it works
+
+flick is **contracts-first**: [`docs/CONTRACTS.md`](docs/CONTRACTS.md) is the single binding document for the timeline format, the HTTP API, server config, and the design tokens. Every part of the system — the server, the web client, a future browser extension — speaks that contract and nothing else. Change the contract in the same PR as the code, first commit; code follows the document, never the other way around.
+
+```mermaid
+flowchart TD
+    subgraph clients["clients — each speaks CONTRACTS.md"]
+        web["<b>flick-web</b><br/>Svelte 5 · the reference client"]
+        ext["browser extension<br/><i>· later</i>"]
+    end
+    landing["<b>flick-landing</b><br/>Astro · myflick.app"]
+
+    web -- "HTTP/JSON · /api" --> server
+    ext -. "HTTP/JSON · /api" .-> server
+    landing -- "CTA →" --> web
+
+    subgraph backend["flick-backend — Rust"]
+        server["<b>flick-server</b><br/>axum · sessions · SQLite"]
+        core["<b>flick-core</b><br/>the reading engine"]
+        db[("SQLite · WAL")]
+        server --> core
+        server --> db
+    end
 ```
 
-That's it. The server finds `web/dist` automatically when run from the repo
-root, creates `./data/flick.db` on first start, and runs its own schema
-migrations. The whole deployment is one binary, one static directory, and one
-SQLite file.
+### The reading engine
 
-Common knobs (all optional, full table in
-[docs/SELF-HOSTING.md](docs/SELF-HOSTING.md)):
+The engine ([`flick-core`](https://github.com/one-more-refactor/flick-backend)) is pure and deterministic — text in, a paced timeline out. Each word earns its dwell time from a research-grounded model:
 
-```sh
-FLICK_ADDR=0.0.0.0:8484          # listen address
-FLICK_DATA_DIR=./data            # SQLite + storage
-FLICK_PUBLIC_URL=https://flick.example.com   # external URL; https ⇒ Secure cookies
-FLICK_WEB_DIST=web/dist          # built web client
-FLICK_SMTP_URL=smtps://user:pass@mail:465    # unset ⇒ login codes go to the log
-```
+- **ORP alignment** — every word is split at its optimal recognition point and rendered with that pivot fixed in place. No line-tracking, no saccades.
+- **Frequency weighting** — rarer words (low [Zipf](https://en.wikipedia.org/wiki/Zipf%27s_law) score) get more time; common words flick by.
+- **Length grading & long-word splitting** — long tokens are chunked, each chunk paced on its own.
+- **Wrap-up pauses** — clause- and sentence-final punctuation gets a beat, so meaning lands.
 
-For systemd units, reverse proxying, SSO setup, backups, and upgrades, see
-**[docs/SELF-HOSTING.md](docs/SELF-HOSTING.md)**.
+Clients never reimplement any of this — they play timelines. Playback is a `requestAnimationFrame`-accumulator scheduler (frame-accurate; never `setTimeout` drift).
 
-## Architecture
+### How your reading syncs
 
-Contracts-first: [`docs/CONTRACTS.md`](docs/CONTRACTS.md) is the binding
-document — the timeline format, HTTP API, config, and design tokens are
-specified there, and every component builds against the document, not against
-each other's code. Changes go to CONTRACTS.md first, code second.
+flick is designed so reading follows you without ever forcing an account:
 
-| Piece | Stack | Role |
+1. **Guest.** Your first visit mints a guest session (a cookie). Your library and position live server-side, keyed to that guest — no signup, nothing lost on refresh.
+2. **Merge on sign-up.** When you create an account (or sign in) from a guest session, that guest's books and progress **merge into your account**.
+3. **Checkpoint while you read.** The reader reports your position and words-read to the server **every ~5 seconds while playing**, and on pause and on exit. Reopen any book, on any device, and you're at the exact word you left.
+4. **One store.** Everything is SQLite (WAL) — books, text, reading days, sessions, friends — with foreign-key cascades, so deleting your account really deletes your data.
+
+### Editions
+
+| | **self-host** | **hosted** (myflick.app) |
 |---|---|---|
-| `core/` | Rust (`flick-core`) | The engine: tokenize → ORP pivots → timing weights → timeline. Pure logic, no I/O. One implementation, every platform. |
-| `server/` | Rust (axum + SQLite) | Accounts (local + OAuth + OIDC), parsing/imports, library, catalog, stats, position sync. Serves the web client. |
-| `web/` | Bun + Svelte 5 + Vite + TS | The reader. Plays timelines with a requestAnimationFrame accumulator. |
-| later | Swift / Kotlin / TUI | Local-first native clients, same backend, same engine (UniFFI/WASM). |
+| Price | free — everything | Free tier + Pro |
+| Limits | none | generous free limits |
+| SSO, imports, stats | all included | all included |
 
-The reading-timeline model in three sentences: the server parses any source
-into a timeline — `[text, orp_index, weight]` per word — produced solely by
-`flick-core`. Clients never reimplement engine logic; they play timelines,
-computing each word's display time as `weight * (60000 / wpm)`, so changing
-WPM never needs a server round-trip. That keeps the engine identical across
-web, native, and whatever comes next.
+*What's free stays free.* The hosted service exists to fund the project; the self-host edition is never a crippled version of it.
 
-## Development
+## Self-hosting
+
+One SQLite file, one container, no external services.
 
 ```sh
-# server (terminal 1)
-cargo run -p flick-server            # http://localhost:8484
-
-# web (terminal 2)
-cd web && bun install && bun dev     # http://localhost:5173, proxies /api → :8484
+curl -fsSL https://raw.githubusercontent.com/one-more-refactor/flick/master/install.sh | sh
 ```
 
-Verify before submitting anything:
+…or clone and use Compose directly:
 
 ```sh
-cargo test && cargo clippy --workspace
-cd web && bun run check && bun run build
+git clone https://github.com/one-more-refactor/flick.git
+cd flick
+docker compose up -d          # → http://localhost:8484
 ```
 
-Use `bun` (not npm/node) for everything under `web/`. See
-[CONTRIBUTING.md](CONTRIBUTING.md).
+The first build compiles the Rust server and the Svelte client into one image; after that it's instant. Full options (SMTP for email login, Google/GitHub/OIDC SSO, reverse-proxy and Podman/Quadlet notes) are in [**docs/SELF-HOSTING.md**](docs/SELF-HOSTING.md).
 
-## Editions
+## The repos
 
-flick ships in two editions, selected by `FLICK_EDITION` (default:
-`selfhost`).
+flick is split into small, single-purpose repos that all speak the same contract:
 
-- **selfhost** — everything free forever, nothing enforced, no strings
-  attached. Where the hosted UI would show Pro, the self-hosted UI shows
-  CONTRIBUTE — a link back to this repo. Forking is encouraged.
-- **hosted** — the maintainer-run cloud instance, with a paid Pro plan that
-  exists to fund this project.
+| Repo | What it is |
+|---|---|
+| **flick** (this one) | The umbrella: docs, the [API contract](docs/CONTRACTS.md), the installer, Compose, and [legal](docs/legal). |
+| [**flick-backend**](https://github.com/one-more-refactor/flick-backend) | Rust — the reading engine (`flick-core`) and the API server (`flick-server`). |
+| [**flick-web**](https://github.com/one-more-refactor/flick-web) | The Svelte 5 web client — the reference implementation of the contract. |
+| [**flick-landing**](https://github.com/one-more-refactor/flick-landing) | The Astro marketing site behind [myflick.app](https://myflick.app) (hosted-only). |
+| *flick-…* | More clients (browser extension, …) land as their own repos over time. |
 
-Binding principles (from CONTRACTS.md): what's free stays free — features
-never move from free to paid — and there is no lifetime tier, ever. Hosted
-revenue funds the open project.
+## Privacy & the law
 
-## License & contributions
+flick is built to be run in public without lawyering it every week:
 
-AGPL-3.0 ([LICENSE](LICENSE)). **No CLA.** Contributions are accepted under
-the inbound=outbound rule: you license your contribution under the same AGPL
-terms as the project. Since no single party accumulates copyright over the
-whole codebase, relicensing to a closed license is impossible by design —
-that's a feature, not an oversight.
+- **Privacy by design** — client IPs are pseudonymised before storage; there's no ad tech.
+- **Your data is yours** — one-click **data export** (GDPR Art. 15/20) and **account deletion** (Art. 17).
+- **AGPL §13** — because the hosted service is a network service, its complete source is these repos. Run a modified flick as a service and you owe your users the same.
 
-Third-party data attributions (embedded word-frequency tables, catalog
-texts) are listed in [NOTICE](NOTICE).
+See [PRIVACY](docs/legal/PRIVACY.md), [TERMS](docs/legal/TERMS.md), and the [legal review](docs/legal/LEGAL-REVIEW.md).
 
-## Status
+## Contributing
 
-v0.5: research-grounded reading engine (per-word pacing from word frequency
-[embedded en/de Zipf tables], graded length effects, sentence-length-scaled
-wrap-up pauses, digit/acronym costs, spillover, Spritz-style long-word
-splitting, and document-normalized weights so the WPM dial is true
-throughput), guest-first reading (no account needed), email-first auth +
-Google/GitHub + email codes + generic OIDC, stats/streaks/sessions, free
-public-domain catalog, PDF/EPUB/txt/URL/Kindle-clippings/cloud-link import,
-tags + trash bin, guided add wizard, full-text library search, six themes ×
-light/dark flicker, i18n (en/de), phone-native reader, PWA, rate limiting,
-editions (selfhost/hosted), real URLs with working back button, WPM ramp on
-play.
+Small on purpose — the house style is strict and load-bearing: **monospace, square corners, one accent colour, no gradients / glows / shadows.** Read [CONTRIBUTING.md](CONTRIBUTING.md) and [CONTRACTS.md](docs/CONTRACTS.md) first; open an issue before a feature PR.
 
-The design reference is [`docs/mockup.html`](docs/mockup.html).
+## License
+
+[**AGPL-3.0-only**](LICENSE). The marketing site ([flick-landing](https://github.com/one-more-refactor/flick-landing)) is MIT. Attribution for bundled data (word-frequency tables, public-domain texts) is in [NOTICE](NOTICE).

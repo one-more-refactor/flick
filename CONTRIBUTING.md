@@ -29,16 +29,27 @@ Two consequences worth internalizing:
 - Client playback scheduling is requestAnimationFrame-accumulator based,
   never setTimeout chains.
 
+## Where the code lives
+
+flick is split into focused repos; contribute in the one you're changing, and
+keep [`docs/CONTRACTS.md`](docs/CONTRACTS.md) (here, in the umbrella) as the
+shared source of truth:
+
+- [**flick-backend**](https://github.com/one-more-refactor/flick-backend) — the engine (`flick-core`) and API server (`flick-server`).
+- [**flick-web**](https://github.com/one-more-refactor/flick-web) — the Svelte web client.
+- [**flick-landing**](https://github.com/one-more-refactor/flick-landing) — the marketing site.
+
 ## Verify
 
-Both must pass clean before a PR:
+Must pass clean before a PR, in the repo you touched:
 
 ```sh
-cargo test && cargo clippy --workspace
-cd web && bun run check && bun run build
-```
+# flick-backend
+cargo test --workspace && cargo clippy --all-targets -- -D warnings
 
-Use `bun` (not npm/node) for everything under `web/`.
+# flick-web  (use bun, not npm/node)
+bun run check && bun run build
+```
 
 ## Code style
 
