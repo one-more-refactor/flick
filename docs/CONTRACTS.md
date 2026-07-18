@@ -207,7 +207,7 @@ flow's panels).
 | `DELETE /api/auth/me` (v0.9) | — | `204`, session cookie cleared — GDPR erasure; permanently deletes the account and everything it owns (FK-cascade + `login_codes` by email). Irreversible |
 
 - `username`: 2–24 chars, `[a-zA-Z0-9_-]`, stored as given, unique not required (it's a display handle, email stays the identifier). `400` with a helpful message on invalid.
-- `avatar` (v0.8): a square profile picture as a self-contained `data:image/...;base64,...` URL, or `""` to clear it. Capped at ~150 KB (`400` otherwise). Returned on the user object as `"avatar"` (null when unset). Clients downscale to a small square before sending.
+- `avatar` (v0.8): a square profile picture as a self-contained PNG, JPEG, or WebP `data:` URL, or `""` to clear it. SVG and other active or unsupported formats are rejected. Capped at ~150 KB (`400` otherwise). Returned on the user object as `"avatar"` (null when unset). Clients downscale to a small square before sending.
 - `settings.wpm`: int 100–1200. `settings.theme`: `"auto" | "light" | "dark"`.
 - `settings.accent`: `"red" | "ember" | "acid" | "cyan" | "violet" | "mono"` (curated pairs, see Design tokens). Default `"red"`.
 - `settings.lang`: `"auto" | "en" | "de" | "es"` (v0.8 adds Spanish). Default `"auto"` (client resolves via `navigator.language`). Engine pacing: `en`/`de` use validated Zipf tables; `es` is detected for routing but paced by the length + structure model only (no frequency signal until a validated ES table ships).
@@ -357,6 +357,7 @@ others. Everything not listed is unlimited.
 | `POST /api/auth/lookup` | 30 / 5 min |
 | `POST /api/auth/guest` | 20 / hour |
 | `POST /api/import/url` | 30 / hour |
+| `POST /api/friends/add` | 30 / 5 min |
 
 - Exceeding a limit → `429` with the standard `{"error": "..."}` body and a
   `Retry-After` header (whole seconds until the window resets).
@@ -528,7 +529,8 @@ stays parked — events are curl-able today, UI later.
 ### Social layer (v0.7)
 
 Friends connect via the personal link `/f/:code` (possession = consent,
-auto-mutual, one row per pair). Friends see **aggregates only** — words,
+auto-mutual, one row per pair). Personal codes carry 128 bits of randomness.
+Friends see **aggregates only** — words,
 streaks, time — never titles or content (binding privacy rule).
 
 | Method & path | Response |
