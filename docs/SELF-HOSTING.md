@@ -1,42 +1,62 @@
 # Self-hosting flick
 
-flick deploys as **one binary, one static directory, one SQLite file**. No
-Docker required, no external database, no message queue. This guide covers
-building, configuring, running under systemd, reverse proxying, SSO, mail,
-backups, and upgrades.
+flick self-hosts as **one container** (API server + web client baked in) over
+**one SQLite file** — no external database, no message queue. Everything is
+free in the self-host edition. This guide covers both install paths, then
+configuration, systemd, reverse proxying, SSO, mail, backups, and upgrades.
 
-## Prerequisites
+Two ways in: **Compose** (easy) or **from source** (a single Rust binary + a
+static web directory).
 
-- **Rust** (stable) — `rustup` recommended. SQLite is bundled via `rusqlite`
-  (`features = ["bundled"]`), so no system SQLite dev packages are needed.
-- **Bun** — builds the web client. Only needed at build time; the server
-  serves the resulting static files itself.
-- Optionally: the `sqlite3` CLI on the host, for backups.
-
-## Build
+## Option A — Compose (recommended)
 
 ```sh
-git clone https://github.com/one-more-refactor/flick && cd flick
-cargo build --release -p flick-server
-cd web && bun install && bun run build && cd ..
+git clone https://github.com/one-more-refactor/flick.git
+cd flick
+docker compose up -d          # → http://localhost:8484
 ```
 
-Artifacts:
-
-- `target/release/flick-server` — the server binary (release profile uses LTO
-  and symbol stripping).
-- `web/dist/` — the built web client, served statically by the server.
-
-## Run
+…or the one-liner, which does the same:
 
 ```sh
-./target/release/flick-server
+curl -fsSL https://raw.githubusercontent.com/one-more-refactor/flick/master/install.sh | sh
 ```
 
-From the repo root that is a complete deployment: the server finds `web/dist`
-automatically, creates the data directory and `flick.db` on first start, and
-listens on `0.0.0.0:8484`. To install elsewhere, copy the binary and the
-`web/dist` directory and point `FLICK_WEB_DIST` at it.
+The first build compiles the Rust server and the Svelte client and bakes them
+into one image; your library lives in the `flick-data` volume. Configure it by
+adding `FLICK_*` variables to `docker-compose.yml` (see the table below).
+
+Podman: build the same image straight from the backend repo, then run it with a
+`flick-data` volume — or use the ready-made Quadlet units in that repo's
+`deploy/` (this is how [myflick.app](https://myflick.app) runs — rootless,
+loopback, behind a Cloudflare Tunnel):
+
+```sh
+podman build -t flick https://github.com/one-more-refactor/flick-backend.git \
+  -f deploy/Containerfile
+```
+
+## Option B — from source
+
+Two repos: the Rust backend and the Svelte client. Prerequisites: **Rust**
+(stable; SQLite is bundled via `rusqlite`, nothing to install) and **Bun**
+(builds the client — build-time only). Optionally the `sqlite3` CLI, for backups.
+
+```sh
+# 1) build the web client → flick-web/dist
+git clone https://github.com/one-more-refactor/flick-web.git
+cd flick-web && bun install && bun run build && cd ..
+
+# 2) build + run the server, pointed at that client
+git clone https://github.com/one-more-refactor/flick-backend.git
+cd flick-backend
+FLICK_WEB_DIST="$PWD/../flick-web/dist" cargo run --release -p flick-server
+```
+
+`target/release/flick-server` is the whole server (release profile uses LTO and
+symbol stripping). It creates the data directory and `flick.db` on first start
+and listens on `0.0.0.0:8484`. To install elsewhere, copy the binary and the
+`dist` directory and point `FLICK_WEB_DIST` at it.
 
 ## Configuration (environment variables)
 
@@ -259,13 +279,13 @@ stale `-wal`/`-shm` files), start the server.
 ## Upgrades
 
 1. Take a backup (above).
-2. `git pull`, then rebuild both artifacts:
-   ```sh
-   cargo build --release -p flick-server
-   cd web && bun install && bun run build && cd ..
-   ```
-3. Replace the installed binary and `web-dist` directory, restart the
-   service.
+2. Rebuild:
+   - **Compose:** re-run the installer, or `docker compose up -d --build` (the
+     data volume is untouched).
+   - **From source:** `git pull` in both `flick-backend` and `flick-web`,
+     rebuild the client (`bun run build`) and the server
+     (`cargo build --release -p flick-server`), replace the installed binary
+     and `dist` directory, and restart the service.
 
 Schema migrations run automatically on startup: the server checks SQLite's
 `PRAGMA user_version` and applies any newer migration steps in order. There

@@ -1,10 +1,4 @@
-/target
-node_modules/
-web/dist/
-/data
+# umbrella hub — no code builds here; the installer clones into ./flick
 .env
-*.local
-data-hosted-demo/
-
-# local prod-preview data dirs (v0.9 verification)
-.local-v8/
+.DS_Store
+/flick/

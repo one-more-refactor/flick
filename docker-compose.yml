@@ -1,0 +1,31 @@
+# flick — self-host in one command.
+#
+#   docker compose up -d      # then open http://localhost:8484
+#
+# Builds the combined image (API server + web client) straight from the
+# flick-backend repo, which pulls in the web client from flick-web. Nothing
+# to clone but this file. Your library lives in the named volume `flick-data`.
+#
+# Podman users: `podman build` the image from the backend repo, then run it —
+# see docs/SELF-HOSTING.md. Everything here is free in the self-host edition.
+
+services:
+  flick:
+    build:
+      context: https://github.com/one-more-refactor/flick-backend.git
+      dockerfile: deploy/Containerfile
+    image: flick:local
+    container_name: flick
+    restart: unless-stopped
+    ports:
+      - "8484:8484"
+    environment:
+      FLICK_EDITION: selfhost
+      FLICK_PUBLIC_URL: http://localhost:8484
+      # FLICK_SMTP_URL: smtps://user:pass@smtp.example.com:465   # email login codes
+      # FLICK_OAUTH_GITHUB_CLIENT_ID / _SECRET, FLICK_OIDC_* ...  # optional SSO
+    volumes:
+      - flick-data:/data
+
+volumes:
+  flick-data:
