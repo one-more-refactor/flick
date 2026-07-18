@@ -119,13 +119,21 @@ terms as the project. Since no single party accumulates copyright over the
 whole codebase, relicensing to a closed license is impossible by design —
 that's a feature, not an oversight.
 
+Third-party data attributions (embedded word-frequency tables, catalog
+texts) are listed in [NOTICE](NOTICE).
+
 ## Status
 
-v0.4: guest-first reading (no account needed), email-first auth +
+v0.5: research-grounded reading engine (per-word pacing from word frequency
+[embedded en/de Zipf tables], graded length effects, sentence-length-scaled
+wrap-up pauses, digit/acronym costs, spillover, Spritz-style long-word
+splitting, and document-normalized weights so the WPM dial is true
+throughput), guest-first reading (no account needed), email-first auth +
 Google/GitHub + email codes + generic OIDC, stats/streaks/sessions, free
-public-domain catalog, PDF/EPUB/txt/URL/Kindle-clippings import, full-text
-library search, six themes × light/dark flicker, i18n (en/de), phone-native
-reader, PWA, rate limiting, editions (selfhost/hosted), real URLs with working
-back button, WPM ramp on play.
+public-domain catalog, PDF/EPUB/txt/URL/Kindle-clippings/cloud-link import,
+tags + trash bin, guided add wizard, full-text library search, six themes ×
+light/dark flicker, i18n (en/de), phone-native reader, PWA, rate limiting,
+editions (selfhost/hosted), real URLs with working back button, WPM ramp on
+play.
 
 The design reference is [`docs/mockup.html`](docs/mockup.html).
