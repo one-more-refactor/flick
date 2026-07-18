@@ -59,7 +59,7 @@ Produced by `flick-core`, served by the API, played by every client.
 ```json
 {
   "version": 1,
-  "words": [["reading", 3, 1.0], ["fast,", 1, 1.6]],
+  "words": [["reading", 2, 1.06], ["fast,", 1, 1.38]],
   "word_count": 2
 }
 ```
@@ -81,15 +81,49 @@ Produced by `flick-core`, served by the API, played by every client.
 
 `orp_index` is relative to the full `text` (including leading punctuation, e.g. `"(word"` → pivot on `o` = index 2).
 
-### Weight rules (multiplicative, applied in this order)
+### Weight model v2 (engine v2, flick-core ≥ 0.5 — research-grounded)
 
-- base `1.0`
-- core length > 8 → `×1.3`
-- ends with `, ; :` → `×1.6`
-- ends with `. ! ?` (or closing quote/bracket after one) → `×2.1`
-- last word before a paragraph break → `×2.6` **instead of** the sentence multiplier (not stacked)
+Every token's raw weight is the product of four factors (each grounded in
+eye-movement research: word-length and word-frequency effects on fixation
+durations, clause/sentence wrap-up effects, and the extra cost of digits):
 
-Round weight to 2 decimals.
+1. **Length** `L = 1 + 0.055 × max(0, n − 6)` where `n` = alphanumeric core
+   length in chars (graded, no cliff; capped by long-word splitting below).
+2. **Frequency** `F` from embedded Zipf tables (top-20k per language,
+   OpenSubtitles-derived FrequencyWords data, CC-BY-SA-4.0 — see NOTICE;
+   document
+   language auto-detected en/de by function-word sampling):
+   `zipf ≥ 6 → 0.85 · 5–6 → 0.92 · 4–5 → 1.00 · 3.5–4 → 1.12 ·
+   known < 3.5 → 1.22`. Unknown words: `1.28`; unknown but capitalized
+   (proper nouns) `1.12`; unknown with core ≤ 3 chars `1.0`.
+3. **Kind** `K`: contains a digit `×1.5` (numerals draw 2.5–7× more
+   fixations than words); all-caps core of ≥2 chars (acronyms) `×1.18`
+   (all-caps reads 10–20% slower, Tinker); internal hyphen `×1.08`.
+4. **Wrap-up** `P` (not stacked; first match wins): paragraph-final `×2.8`;
+   sentence-final `.!?…` incl. before closing quotes/brackets `×1.9`, or
+   `×2.3` when the sentence ran longer than 7 words (wrap-up scales with
+   sentence length — Tiffin-Richards & Schröder 2018, Spritz patent);
+   clause-final `,;:` or `—` `×1.5`.
+5. **Spillover** `S`: the word after a rare one (`F ≥ 1.22`) gets `×1.06`
+   (Rayner & Duffy 1986); resets at sentence boundaries.
+
+Then, per document: clamp raw weights to `[0.45, 3.4]`; when the timeline has
+≥ 20 entries, divide every weight by the document mean (**wpm honesty**: the
+mean weight is exactly 1.0, so N words at `wpm` take `N/wpm` minutes and
+"min left" estimates are exact — the wpm dial is true throughput, not a
+vibe); clamp again to `[0.4, 3.6]` and round to 2 decimals.
+
+**Long-word splitting** (Spritz-style, essential for German compounds):
+alphanumeric cores > 14 chars are displayed as chunks of ≤ 10 chars, all but
+the last suffixed `-`, split preferably after a vowel near the chunk cap.
+Each chunk is its own timeline entry with its own ORP and weight; trailing
+punctuation (and the wrap-up factor) belongs to the last chunk; leading
+punctuation to the first. `paragraphs()` applies the identical split, so the
+flattened-text ↔ timeline 1:1 mapping still holds.
+
+The timeline JSON format is unchanged (`version: 1`);
+`flick_core::ENGINE_VERSION = 2`. Existing stored timelines keep playing —
+the engine runs at ingestion time only.
 
 ## HTTP API
 
@@ -406,6 +440,8 @@ Neutrals — warm for paper/sage/dusk, cool for signal/tide/noir:
 
 - Scheduler MUST be vsync-locked (requestAnimationFrame accumulator on web; CADisplayLink/Choreographer native), never bare setTimeout chains — target smooth 150–800+ WPM on 60/90/120 Hz screens.
 - Word advance: accumulate frame delta; when elapsed ≥ current word's `weight * 60000/wpm`, advance (carry remainder).
+- Frame deltas are clamped to 250 ms and a hidden tab pauses playback — jank
+  or a background tab must never fast-forward through unseen words (v0.5).
 - Controls: play/pause (Space), back/forward one sentence (←/→), WPM slider (150–800, step 25). Initial WPM comes from `user.settings.wpm` (localStorage is only a cache).
 - Touch (phone): tap center third = play/pause, left third = back one sentence, right third = forward one sentence. No hover-dependent UI anywhere.
 - Respect `prefers-reduced-motion`: never autoplay.
