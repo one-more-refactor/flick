@@ -5,3 +5,6 @@ web/dist/
 .env
 *.local
 data-hosted-demo/
+
+# local prod-preview data dirs (v0.9 verification)
+.local-v8/

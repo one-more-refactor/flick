@@ -203,6 +203,8 @@ flow's panels).
 | Method & path | Body | Response |
 |---|---|---|
 | `PATCH /api/auth/me` | any subset of `{username, name, onboarded, avatar?, settings: {wpm?, theme?, accent?, lang?}}` | `200 {user}` |
+| `GET /api/auth/export` (v0.9) | — | `200` JSON attachment: the caller's full data (profile, library incl. source text, reading days, sessions, own friend list) — GDPR access/portability |
+| `DELETE /api/auth/me` (v0.9) | — | `204`, session cookie cleared — GDPR erasure; permanently deletes the account and everything it owns (FK-cascade + `login_codes` by email). Irreversible |
 
 - `username`: 2–24 chars, `[a-zA-Z0-9_-]`, stored as given, unique not required (it's a display handle, email stays the identifier). `400` with a helpful message on invalid.
 - `avatar` (v0.8): a square profile picture as a self-contained `data:image/...;base64,...` URL, or `""` to clear it. Capped at ~150 KB (`400` otherwise). Returned on the user object as `"avatar"` (null when unset). Clients downscale to a small square before sending.
@@ -211,6 +213,7 @@ flow's panels).
 - `settings.lang`: `"auto" | "en" | "de" | "es"` (v0.8 adds Spanish). Default `"auto"` (client resolves via `navigator.language`). Engine pacing: `en`/`de` use validated Zipf tables; `es` is detected for routing but paced by the length + structure model only (no frequency signal until a validated ES table ships).
 - `onboarded`: client sets `true` when the intro flow completes **or is skipped**. New users start `false`; clients route un-onboarded users into the intro flow after auth (local register AND first SSO login). The flow always shows a small `SKIP_` (top corner, quiet) — skipping sets `onboarded: true` with defaults.
 - Settings are server-side so they follow the account across devices; clients cache in localStorage (for guests localStorage is the primary store until they upgrade).
+- **Data rights & minimization (v0.9):** every account can export (`GET /api/auth/export`) and erase (`DELETE /api/auth/me`) its own data. The only IP stored is the referral same-IP dedup value on referred signups (`users.signup_ip`), and it is stored **pseudonymized** (`sha256("flick-ip-v1:" + ip)`, `"unknown"` kept verbatim) — never a raw IP. No analytics, no third-party trackers/fonts/CDNs; the sole cookie is the strictly-necessary `flick_session`, so no consent banner is required (keep it that way). The bundled reader ships **no GSAP** — its non-GPL license is incompatible with the AGPL app; the app's landing motion uses the Web Animations API, and all GSAP/Vanta lives only in the separate non-AGPL `flick-landing` site.
 
 ### Starter library (v0.4.1)
 
