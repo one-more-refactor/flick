@@ -668,11 +668,14 @@ hosted history window (90 days) server-side.
 
 ## Web client v0.13 additions
 
-- **Flat top bar.** The 3D GITHUB / GO PREMIUM pair is gone by decree (read as
-  misaligned at chip size). GITHUB is a quiet hairline chip in the theme-picker
-  family (star warms to accent on hover); GO PREMIUM is the one loud thing — a
-  flat solid accent block that inverts to an outline on hover, built like
-  `.acct`. Supersedes the 3D bullets in v0.11/v0.12.
+- **3D flip chips (v0.13.1).** GITHUB and GO PREMIUM are true 3D elements in
+  the top bar's one 3D vocabulary — the quarter flip (mode cube, streak chip).
+  Hover rolls the chip 90° on X (same `.cubebox` construction: preserve-3d box,
+  faces at `translateZ(half-height)`) to a hidden second face — GITHUB (quiet
+  hairline, accent star) → inverted `OPEN SOURCE`; GO PREMIUM (solid accent) →
+  outlined `unlimited →` (i18n `premium_flip`). Press sinks the solid into the
+  page; reduced-motion never rolls. The painted offset-extrude style of
+  v0.11/v0.12 stays retired — depth is real, never painted.
 - **LOG IN is always present.** Guests get LOG IN next to CREATE ACCOUNT (both
   enter the same email-first auth flow), and the link is no longer hidden on
   phones — the door people look for stays visible at every width.
