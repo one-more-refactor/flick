@@ -1,12 +1,13 @@
 #!/bin/sh
 # One-shot (idempotent) production setup for the flick box. Run ON the server:
 #
-#   sh setup-server.sh
+#   sh setup-server.sh                       # updater + admin panel
+#   FLICK_TUNNEL_TOKEN=eyJ… sh setup-server.sh   # + the ingress connector
 #
 # Installs/refreshes: the auto-updater (script + user timer), the flick-admin
-# + flick.network Quadlet units, and prints what still needs a human. It never
-# touches existing secrets (FLICK_ADMIN_TOKEN stays whatever the backend unit
-# already carries).
+# + flick.network Quadlet units, the ingress connector (when a tunnel token is
+# supplied), and prints what still needs a human. It never touches existing
+# secrets (FLICK_ADMIN_TOKEN stays whatever the backend unit already carries).
 set -eu
 
 SVC="$HOME/services/flick"
@@ -38,15 +39,31 @@ else
   echo "!! $BACKEND missing — install the backend quadlet first (flick-backend/deploy)."
 fi
 
+# --- ingress connector (host netns; only when a token is supplied) ----------
+if [ -n "${FLICK_TUNNEL_TOKEN:-}" ]; then
+  umask 077
+  printf '%s' "$FLICK_TUNNEL_TOKEN" > "$SVC/tunnel_token"
+  install -m 0644 "$HERE/flick-cloudflared.service" "$UNITS/flick-cloudflared.service"
+  echo "installed flick-cloudflared.service"
+fi
+
 systemctl --user daemon-reload
 systemctl --user enable --now flick-update.timer
+[ -f "$UNITS/flick-cloudflared.service" ] && systemctl --user enable --now flick-cloudflared.service
 systemctl --user restart flick-backend 2>/dev/null || true
 systemctl --user start flick-admin 2>/dev/null || true
+# survive logout/reboot without an active session
+loginctl enable-linger "$USER" 2>/dev/null || true
 
 echo
 echo "✓ auto-updater installed (flick-update.timer, every 15 min; log: $SVC/update.log)"
 echo "✓ admin panel unit installed (127.0.0.1:3013)"
+[ -f "$UNITS/flick-cloudflared.service" ] && echo "✓ ingress connector installed (flick_prod tunnel)"
 echo
 echo "still manual:"
-echo "  · Cloudflare Zero Trust hostname: admin.myflick.app -> http://localhost:3013"
+echo "  · Cloudflare public hostnames on the flick_prod tunnel (origins MUST be"
+echo "    http://127.0.0.1:PORT — 'localhost' resolves to ::1 here and 502s):"
+echo "      app.myflick.app   -> http://127.0.0.1:3011"
+echo "      myflick.app       -> http://127.0.0.1:3012"
+echo "      admin.myflick.app -> http://127.0.0.1:3013"
 echo "  · first admin: sign into the panel with the env token, users -> make admin"

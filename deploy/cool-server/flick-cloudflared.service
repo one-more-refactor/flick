@@ -1,0 +1,23 @@
+# ~/.config/systemd/user/flick-cloudflared.service
+#
+# The flick ingress connector. Runs cloudflared in the HOST network namespace
+# (as a plain user process, NOT inside a podman pod), so it can reach the
+# rootless-podman published ports on 127.0.0.1:3011-3013. A connector living
+# inside another pod's netns (e.g. one bundled with a different app) cannot see
+# these loopback ports and every request 502s — this is why flick has its own.
+#
+# Token: setup-server.sh writes ~/services/flick/tunnel_token (mode 600) from
+# the flick_prod tunnel. Cloudflare route origins must use 127.0.0.1 (not
+# "localhost"): on this box localhost resolves to ::1, which nothing listens on.
+[Unit]
+Description=flick cloudflared connector (host netns → 127.0.0.1:3011-3013)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=/usr/bin/cloudflared --no-autoupdate tunnel run --token-file %h/services/flick/tunnel_token
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target
