@@ -666,6 +666,29 @@ hosted history window (90 days) server-side.
   sizing, no tap-flash / no rubber-band; at ≥1024px the library widens and the
   ALL list becomes two columns with hairline grid separators.
 
+## Legal surface (hosted, v0.12.1)
+
+German-law compliance for the hosted instance — the landing owns the legal
+pages, every hosted surface links to them:
+
+- **`myflick.app/impressum`** — Anbieterkennzeichnung (§ 5 DDG / § 18 Abs. 2
+  MStV) for myflick.app + app. + admin. subdomains. Scoped explicitly to OUR
+  instance: self-hosted flicks are their operators' responsibility.
+- **`myflick.app/datenschutz`** — Datenschutzerklärung (Art. 13 DSGVO) in
+  German, derived from `docs/legal/PRIVACY.md` (which stays the English
+  working version, linked from the page). Claims are bound to deployed
+  reality: argon2id, pseudonymised IPs, in-app export/delete, 30-day trash,
+  strictly-necessary cookie only (no consent banner, § 25 Abs. 2 TDDDG), and
+  **server logs ≤ 14 days** — journald retention on the prod box is
+  configured to match (`MaxRetentionSec=14day`).
+- **Operator identity placeholders** (name, address, contact email,
+  supervisory authority, future SMTP provider) render as loud dashed-accent
+  `.fill` marks so an unfilled Impressum can never pass as a real one; philip
+  fills them in one commit.
+- **Web footer** (`.foot-legal`): the app footer links Impressum + Datenschutz
+  **only when `edition === 'hosted'`** — self-host builds stay clean.
+- Landing footer links both pages; both are in the sitemap (low priority).
+
 ## Web client v0.6 additions
 
 - **Top bar v2.** Left cluster: `FLICK_` mark + GO PREMIUM (hosted; replaced
