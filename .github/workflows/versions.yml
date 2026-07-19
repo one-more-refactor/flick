@@ -2,6 +2,8 @@ name: versions
 # Cross-repo release tracking: fails if any repo's manifest version on master
 # has drifted from its newest published release (i.e. someone bumped a version
 # but never tagged, or tagged without bumping). Runs nightly + on demand.
+# A drifted repo is re-checked for a grace window before failing, because a
+# push here usually races the component repo's still-publishing release job.
 on:
   schedule:
     - cron: "17 4 * * *"
@@ -19,7 +21,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -eu
-          fail=0
           check() { # repo manifest-path extractor
             repo="$1"; path="$2"; kind="$3"
             raw=$(gh api "repos/one-more-refactor/$repo/contents/$path" --jq .content | base64 -d)
@@ -32,13 +33,32 @@ jobs:
             if [ "$manifest" = "$release" ]; then
               echo "✓ $repo  manifest $manifest = release $release"
             else
-              echo "::error::$repo drifted — manifest $manifest vs newest release $release"
+              if [ "$final" = 1 ]; then
+                echo "::error::$repo drifted — manifest $manifest vs newest release $release"
+              else
+                echo "✗ $repo  manifest $manifest vs release $release (may be an in-flight release job)"
+              fi
               fail=1
             fi
           }
-          check flick-backend server/Cargo.toml cargo
-          check flick-web     package.json      npm
-          check flick-landing package.json      npm
-          check flick-admin   package.json      npm
-          check corepanel     package.json      npm
+          sweep() {
+            fail=0
+            check flick-backend server/Cargo.toml cargo
+            check flick-web     package.json      npm
+            check flick-landing package.json      npm
+            check flick-admin   package.json      npm
+            check corepanel     package.json      npm
+          }
+          # grace window: a component repo's release workflow needs a couple of
+          # minutes to publish after the tag lands, and the contracts push here
+          # races it. Re-sweep before calling it drift.
+          final=0
+          for i in 1 2 3 4 5 6 7; do
+            sweep
+            [ "$fail" = 0 ] && exit 0
+            echo "— retry $i/7 in 60s —"
+            sleep 60
+          done
+          final=1
+          sweep
           exit $fail
