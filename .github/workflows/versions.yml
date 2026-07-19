@@ -1,0 +1,42 @@
+name: versions
+# Cross-repo release tracking: fails if any repo's manifest version on master
+# has drifted from its newest published release (i.e. someone bumped a version
+# but never tagged, or tagged without bumping). Runs nightly + on demand.
+on:
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+  push:
+    branches: [master]
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Compare manifest versions to newest releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          fail=0
+          check() { # repo manifest-path extractor
+            repo="$1"; path="$2"; kind="$3"
+            raw=$(gh api "repos/one-more-refactor/$repo/contents/$path" --jq .content | base64 -d)
+            case "$kind" in
+              cargo) manifest=$(printf '%s' "$raw" | grep -m1 '^version' | cut -d'"' -f2) ;;
+              npm)   manifest=$(printf '%s' "$raw" | grep -m1 '"version"' | cut -d'"' -f4) ;;
+            esac
+            release=$(gh api "repos/one-more-refactor/$repo/releases/latest" --jq .tag_name 2>/dev/null || echo none)
+            release="${release#v}"
+            if [ "$manifest" = "$release" ]; then
+              echo "✓ $repo  manifest $manifest = release $release"
+            else
+              echo "::error::$repo drifted — manifest $manifest vs newest release $release"
+              fail=1
+            fi
+          }
+          check flick-backend server/Cargo.toml cargo
+          check flick-web     package.json      npm
+          check flick-landing package.json      npm
+          exit $fail
