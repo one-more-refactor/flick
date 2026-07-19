@@ -44,7 +44,8 @@ sharing, tags — is free for everyone, forever.
 |---|---|---|
 | Reader, engine, all themes, zen mode, reader customisation, stats, streaks, guest mode, sync, search, shelf | ✓ | ✓ |
 | **All clients** — web, phone, browser extension (when it lands) | ✓ | ✓ |
-| All import formats (paste / PDF / EPUB / TXT / clippings / URL / cloud links) + bulk import (≤50 files) | ✓ | ✓ |
+| All import formats (paste / PDF / EPUB / TXT / clippings / URL / cloud links), added **one at a time** | ✓ | ✓ |
+| **Bulk import** — drop a whole pile of files at once (≤50) | — | ✓ |
 | Share links (send a book, recipients read + import instantly) | ✓ | ✓ |
 | Storage | **uncapped** | uncapped |
 | Uploads per week | **15** | unlimited |
@@ -56,6 +57,12 @@ sharing, tags — is free for everyone, forever.
   extension HTML). Catalog adds and the intro book never count. Week =
   ISO-8601 week, UTC. Exceeding → `403 {"error": …, "code": "upload_limit"}`.
   Existing content is never deleted or locked.
+- **Bulk import is the single Pro convenience on ingestion.** Adding one file
+  at a time (drop, picker, paste, URL, cloud) is free for everyone, always;
+  dropping *several files at once* is a Pro perk. The gate is purely
+  client-side (a "add the first one · Go Pro" prompt); the server enforces
+  nothing beyond the weekly counter, so free users lose no capability — they
+  add the same files, one gesture at a time. Selfhost and Pro never see it.
 - `users.plan`: `"free"` (default) or `"pro"`. No API can set it (manual/admin
   only until billing exists). Pro is shown as **SOON** in the hosted UI.
 - The user JSON gains `"uploads": {"used": n, "limit": 15 | null}` (`null` =
@@ -543,6 +550,14 @@ Neutrals — warm for paper/sage/dusk, cool for signal/tide/noir:
 - **Landing quick-read.** The landing accepts a file drop / picker directly:
   guest session is minted lazily, the file imports, and the reader opens —
   upload-to-reading in one gesture. Same for pasted text via the add panel.
+- **Drop anywhere (signed-in).** In any signed-in content view (not the reader,
+  onboarding or auth, and not while the add wizard owns the drop), a file
+  dragged onto the window raises a full-screen `drop to add` overlay. Dropping
+  **one** file imports it and opens the reader; dropping **several** triggers
+  the bulk-import Pro gate for hosted-free users (add-first-one · Go Pro), or a
+  sequential bulk import with an n/m readout for Pro and selfhost. A terminal
+  toast reports progress and result; errors (incl. `upload_limit`) surface
+  inline with a Go-Pro affordance.
 - **Edition awareness.** Client fetches `GET /api/meta`; `selfhost` replaces
   every Pro surface with CONTRIBUTE → the GitHub repo. `hosted` shows the
   plans strip and, when the weekly upload limit is hit, a friendly limit note
@@ -619,7 +634,7 @@ hosted history window (90 days) server-side.
 - **Reader:** an animated morphing play/pause/replay **icon** replaces the text button; an optional **context/sentence ribbon** (toggle in the customisation panel) shows the live word inside its sentence, each word click-to-seek. Position still syncs every 5s while playing, plus on `pagehide`.
 - **Read-only shares:** `share_mode: "read"` links open an **ephemeral reader** — public `/shared/:token/timeline`, no library copy, no position/session persisted (`ephemeral` prop).
 - **Share popup** (`ShareMenu`): a permission switch (add-to-library vs read-only, sets `share_mode`), copy link, the native OS share sheet (`navigator.share`, shown only when available), and an invite-a-friend link.
-- **Top bar:** a remaining-uploads meter (hosted free), a more satisfying GitHub button (dart + star micro-interaction), an animated theme picker (caret + staggered rows), and a square **avatar button** (profile picture, or an initial) opening an account menu (stats · invite · log out). Guests still get `Create account`.
+- **Top bar:** a remaining-uploads meter (hosted free), a **3D GitHub button** (a solid accent-extruded block that lifts on hover and presses flat on click — the extrude is a real offset element, never a blurred shadow, per the design law), an animated theme picker (caret + staggered rows), and a square **avatar button** (profile picture, or an initial) opening an account menu (stats · invite · log out). Guests still get `Create account`.
 - **Avatar:** uploaded during onboarding — the client center-crops + downscales to a ≤160px square JPEG `data:` URL, `PATCH /api/auth/me {avatar}`.
 - **Register:** an account-info perks panel (sync · streak · stats/wrapped · friends/invites/Pro credits). Invite page reworked into a clear 3-step "how it works".
 
