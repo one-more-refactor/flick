@@ -74,7 +74,7 @@ One SQLite file, one container, no external services:
 curl -fsSL https://raw.githubusercontent.com/one-more-refactor/flick/master/install.sh | sh
 ```
 
-…or `git clone https://github.com/one-more-refactor/flick.git && cd flick && docker compose up -d` → http://localhost:8484. Full options (SMTP, SSO, reverse proxy, Podman/Quadlet) in [**docs/SELF-HOSTING.md**](docs/SELF-HOSTING.md).
+…or `git clone https://github.com/one-more-refactor/flick.git && cd flick && docker compose up -d` → http://localhost:8484. Add `--with-admin` (installer) or `--profile admin` (compose) for the [operator panel](https://github.com/one-more-refactor/flick-admin) on :8485. Full options (SMTP, SSO, reverse proxy, Podman/Quadlet) in [**docs/SELF-HOSTING.md**](docs/SELF-HOSTING.md).
 
 ## The repos
 
