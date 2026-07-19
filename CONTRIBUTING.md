@@ -38,6 +38,7 @@ shared source of truth:
 - [**flick-backend**](https://github.com/one-more-refactor/flick-backend) — the engine (`flick-core`) and API server (`flick-server`).
 - [**flick-web**](https://github.com/one-more-refactor/flick-web) — the Svelte web client.
 - [**flick-landing**](https://github.com/one-more-refactor/flick-landing) — the marketing site.
+- [**flick-admin**](https://github.com/one-more-refactor/flick-admin) — the server admin panel, built on [corepanel](https://github.com/one-more-refactor/corepanel).
 
 ## Verify
 
