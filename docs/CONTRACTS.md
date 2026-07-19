@@ -638,6 +638,34 @@ hosted history window (90 days) server-side.
 - **Avatar:** uploaded during onboarding — the client center-crops + downscales to a ≤160px square JPEG `data:` URL, `PATCH /api/auth/me {avatar}`.
 - **Register:** an account-info perks panel (sync · streak · stats/wrapped · friends/invites/Pro credits). Invite page reworked into a clear 3-step "how it works".
 
+## Web client v0.12 additions
+
+- **Sentence view on by default.** The reader's context/sentence ribbon now
+  defaults ON (`flick.reader.context`); a reader who explicitly turned it off
+  keeps it off. Supersedes the "optional, off by default" note in v0.8.
+- **3D GO PREMIUM.** The hosted top-bar GO PREMIUM link becomes a 3D block that
+  mirrors the GitHub button, filled the other way: a solid **accent face** over
+  an **ink extrude** (a neutral extrude under `noir`, whose accent is the ink).
+  Same lift-on-hover / press-flat physics; the extrude is a real offset element,
+  never a blurred shadow.
+- **Top-bar uploads meter removed.** The remaining-uploads count that sat next
+  to GitHub is gone (read as noise, unclear purpose). The weekly allowance now
+  lives only in the library. Supersedes "a remaining-uploads meter" in v0.8.
+- **Free-imports gauge.** In the library `listcap`, next to ADD, the hosted
+  allowance renders as a **segmented gauge** — one tick per weekly import,
+  accent = still available, faded = spent — plus a plain count ("N free imports
+  left this week"); taps through to premium. On phones the words drop and the
+  gauge alone carries it. Supersedes the v0.6 "Uploads bar".
+- **Progressive library list.** The ALL list shows the latest slice (8) and
+  reveals more as a sentinel scrolls into view (tap fallback: `show more`).
+  Search results and a fresh tag filter reset to the top.
+- **Row trash quiet until engaged.** The per-row delete joins `#` and `»` in
+  fading out until the row is hovered/focused on hover-capable devices; always
+  present on touch.
+- **Native + desktop.** Safe-area insets on header/footer/wrap, `100dvh`
+  sizing, no tap-flash / no rubber-band; at ≥1024px the library widens and the
+  ALL list becomes two columns with hairline grid separators.
+
 ## Web client v0.6 additions
 
 - **Top bar v2.** Left cluster: `FLICK_` mark + GO PREMIUM (hosted; replaced
