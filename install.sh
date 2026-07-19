@@ -10,6 +10,13 @@ set -eu
 REPO="https://github.com/one-more-refactor/flick.git"
 DIR="${FLICK_DIR:-flick}"
 PORT="8484"
+WITH_ADMIN=0
+for arg in "$@"; do
+  case "$arg" in
+    --with-admin) WITH_ADMIN=1 ;;
+    *) printf 'unknown flag: %s\n' "$arg" >&2; exit 1 ;;
+  esac
+done
 
 say() { printf '\033[1m%s\033[0m\n' "$*"; }
 die() { printf '\033[31m%s\033[0m\n' "$*" >&2; exit 1; }
@@ -38,6 +45,22 @@ else
 fi
 cd "$DIR"
 
+# --- admin panel (optional) ------------------------------------------------
+if [ "$WITH_ADMIN" = 1 ]; then
+  # persist the profile + a bootstrap token in .env so plain `compose up` keeps them
+  touch .env
+  grep -q '^COMPOSE_PROFILES=' .env || echo 'COMPOSE_PROFILES=admin' >> .env
+  if ! grep -q '^FLICK_ADMIN_TOKEN=' .env; then
+    if command -v openssl >/dev/null 2>&1; then
+      TOKEN=$(openssl rand -hex 24)
+    else
+      TOKEN=$(head -c 24 /dev/urandom | od -An -tx1 | tr -d ' \n')
+    fi
+    echo "FLICK_ADMIN_TOKEN=$TOKEN" >> .env
+  fi
+  grep -q '^FLICK_ADMIN_URL=' .env || echo 'FLICK_ADMIN_URL=http://localhost:8485' >> .env
+fi
+
 # --- build & run -----------------------------------------------------------
 say "› Building and starting flick (first build compiles Rust — grab a coffee)"
 $COMPOSE up -d --build
@@ -53,3 +76,12 @@ cat <<EOF
   Everything is free in the self-host edition. Read the docs at
   https://github.com/one-more-refactor/flick
 EOF
+
+if [ "$WITH_ADMIN" = 1 ]; then
+  cat <<ADMEOF
+  admin panel  →  http://localhost:8485
+  Sign in with "use an admin token instead" and the token from $DIR/.env,
+  then open users and promote your own account.
+
+ADMEOF
+fi
