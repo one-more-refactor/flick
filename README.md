@@ -15,6 +15,20 @@
 
 </div>
 
+## Quick start
+
+**Use it now — nothing to install:** [**myflick.app**](https://myflick.app) — guest-first, read in one tap, free.
+
+**Self-host it — one command, one container, no external services:**
+
+```sh
+curl -fsSL https://myflick.app/install.sh | sh
+```
+
+→ open **http://localhost:8484**. Your library lives in a named volume; re-run to upgrade in place. Add `--with-admin` for the [operator panel](https://github.com/one-more-refactor/flick-admin) on `:8485`.
+
+<sub>Prefer to read the script first? It's [`install.sh`](install.sh) — or clone and `docker compose up -d`. Podman, SMTP, SSO, and reverse-proxy options are in [**docs/SELF-HOSTING.md**](docs/SELF-HOSTING.md).</sub>
+
 ## What is flick?
 
 One word at a time, each anchored on the **red pivot letter your eye locks onto** — RSVP reading with Optimal-Recognition-Point alignment, comfortable well past 400 WPM. And flick *paces*, not flashes: rare words linger, common ones fly, long words split, sentences breathe.

@@ -1,10 +1,13 @@
 #!/bin/sh
 # flick — self-host installer.
 #
-#   curl -fsSL https://raw.githubusercontent.com/one-more-refactor/flick/master/install.sh | sh
+#   curl -fsSL https://myflick.app/install.sh | sh
+#   # (mirror: https://raw.githubusercontent.com/one-more-refactor/flick/master/install.sh)
 #
 # Brings up the self-host edition (everything free) with Docker or Podman
 # Compose. Your library lives in a named volume; re-running upgrades in place.
+# This script is served verbatim at https://myflick.app/install.sh (a copy
+# lives in flick-landing/public/); the canonical source is this file.
 set -eu
 
 REPO="https://github.com/one-more-refactor/flick.git"
