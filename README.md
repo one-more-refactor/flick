@@ -35,11 +35,13 @@ flowchart TD
     subgraph clients["clients — each speaks CONTRACTS.md"]
         web["<b>flick-web</b><br/>Svelte 5 · the reference client"]
         ext["browser extension<br/><i>· later</i>"]
+        admin["<b>flick-admin</b><br/>corepanel · operators"]
     end
     landing["<b>flick-landing</b><br/>Astro · myflick.app"]
 
     web -- "HTTP/JSON · /api" --> server
     ext -. "HTTP/JSON · /api" .-> server
+    admin -- "/api/admin · bearer" --> server
     landing -- "CTA →" --> web
 
     subgraph backend["flick-backend — Rust"]
@@ -84,6 +86,8 @@ Small, single-purpose repos, one contract. Every repo tests on every push, and t
 | [**flick-backend**](https://github.com/one-more-refactor/flick-backend) | Rust — engine (`flick-core`) + API server (`flick-server`). | [![release](https://img.shields.io/github/v/release/one-more-refactor/flick-backend?label=&labelColor=111111&color=d32f2f)](https://github.com/one-more-refactor/flick-backend/releases/latest) | ![commits since](https://img.shields.io/github/commits-since/one-more-refactor/flick-backend/latest?label=ahead&labelColor=111111&color=d32f2f) | [![ci](https://github.com/one-more-refactor/flick-backend/actions/workflows/ci.yml/badge.svg)](https://github.com/one-more-refactor/flick-backend/actions/workflows/ci.yml) |
 | [**flick-web**](https://github.com/one-more-refactor/flick-web) | Svelte 5 web client — the reference implementation. | [![release](https://img.shields.io/github/v/release/one-more-refactor/flick-web?label=&labelColor=111111&color=d32f2f)](https://github.com/one-more-refactor/flick-web/releases/latest) | ![commits since](https://img.shields.io/github/commits-since/one-more-refactor/flick-web/latest?label=ahead&labelColor=111111&color=d32f2f) | [![ci](https://github.com/one-more-refactor/flick-web/actions/workflows/ci.yml/badge.svg)](https://github.com/one-more-refactor/flick-web/actions/workflows/ci.yml) |
 | [**flick-landing**](https://github.com/one-more-refactor/flick-landing) | Astro marketing site behind [myflick.app](https://myflick.app). | [![release](https://img.shields.io/github/v/release/one-more-refactor/flick-landing?label=&labelColor=111111&color=d32f2f)](https://github.com/one-more-refactor/flick-landing/releases/latest) | ![commits since](https://img.shields.io/github/commits-since/one-more-refactor/flick-landing/latest?label=ahead&labelColor=111111&color=d32f2f) | [![ci](https://github.com/one-more-refactor/flick-landing/actions/workflows/ci.yml/badge.svg)](https://github.com/one-more-refactor/flick-landing/actions/workflows/ci.yml) |
+| [**flick-admin**](https://github.com/one-more-refactor/flick-admin) | The server admin panel — analytics, users, events, announcements. | [![release](https://img.shields.io/github/v/release/one-more-refactor/flick-admin?label=&labelColor=111111&color=d32f2f)](https://github.com/one-more-refactor/flick-admin/releases/latest) | ![commits since](https://img.shields.io/github/commits-since/one-more-refactor/flick-admin/latest?label=ahead&labelColor=111111&color=d32f2f) | [![ci](https://github.com/one-more-refactor/flick-admin/actions/workflows/ci.yml/badge.svg)](https://github.com/one-more-refactor/flick-admin/actions/workflows/ci.yml) |
+| [**corepanel**](https://github.com/one-more-refactor/corepanel) | The generic admin-panel toolkit flick-admin is built on (MIT). | [![release](https://img.shields.io/github/v/release/one-more-refactor/corepanel?label=&labelColor=111111&color=d32f2f)](https://github.com/one-more-refactor/corepanel/releases/latest) | ![commits since](https://img.shields.io/github/commits-since/one-more-refactor/corepanel/latest?label=ahead&labelColor=111111&color=d32f2f) | [![ci](https://github.com/one-more-refactor/corepanel/actions/workflows/ci.yml/badge.svg)](https://github.com/one-more-refactor/corepanel/actions/workflows/ci.yml) |
 | *flick-…* | More clients (browser extension, …) land as their own repos. | | | |
 
 ## Privacy & the law

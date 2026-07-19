@@ -39,4 +39,6 @@ jobs:
           check flick-backend server/Cargo.toml cargo
           check flick-web     package.json      npm
           check flick-landing package.json      npm
+          check flick-admin   package.json      npm
+          check corepanel     package.json      npm
           exit $fail
