@@ -666,6 +666,22 @@ hosted history window (90 days) server-side.
   sizing, no tap-flash / no rubber-band; at ≥1024px the library widens and the
   ALL list becomes two columns with hairline grid separators.
 
+## Web client v0.13 additions
+
+- **Flat top bar.** The 3D GITHUB / GO PREMIUM pair is gone by decree (read as
+  misaligned at chip size). GITHUB is a quiet hairline chip in the theme-picker
+  family (star warms to accent on hover); GO PREMIUM is the one loud thing — a
+  flat solid accent block that inverts to an outline on hover, built like
+  `.acct`. Supersedes the 3D bullets in v0.11/v0.12.
+- **LOG IN is always present.** Guests get LOG IN next to CREATE ACCOUNT (both
+  enter the same email-first auth flow), and the link is no longer hidden on
+  phones — the door people look for stays visible at every width.
+- **No bare `@guest`.** The library greeting renders the handle only for real
+  accounts; guests already have the guest banner.
+- **Legal footer links parked** (app + landing) until the pages are localized
+  to the UI language and the operator details are filled — the pages
+  themselves stay live at their URLs. Amends "Legal surface" below.
+
 ## Legal surface (hosted, v0.12.1)
 
 German-law compliance for the hosted instance — the landing owns the legal
