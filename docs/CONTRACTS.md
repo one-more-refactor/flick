@@ -358,6 +358,7 @@ others. Everything not listed is unlimited.
 | `POST /api/auth/guest` | 20 / hour |
 | `POST /api/import/url` | 30 / hour |
 | `POST /api/friends/add` | 30 / 5 min |
+| `POST /api/admin/login` | 10 / 5 min |
 
 - Exceeding a limit → `429` with the standard `{"error": "..."}` body and a
   `Retry-After` header (whole seconds until the window resets).
@@ -368,6 +369,53 @@ others. Everything not listed is unlimited.
   address itself is the key.
 - Fixed window means a worst-case 2× burst across a window boundary — fine
   for abuse resistance; this is not traffic shaping.
+
+## Admin API & panel (v0.10)
+
+The admin surface is a **fully separate client** — the
+[flick-admin](https://github.com/one-more-refactor/flick-admin) panel (built
+on [corepanel](https://github.com/one-more-refactor/corepanel)) runs as its
+own service on its own port and talks to `/api/admin/*` only. Nothing
+admin-shaped ships inside the user app beyond the banner below.
+
+**Two ways to be admin:**
+
+1. `Authorization: Bearer $FLICK_ADMIN_TOKEN` — the break-glass/bootstrap
+   token (constant-time compare). Unset ⇒ that path is disabled.
+2. An **admin session**: a registered, password-holding user with
+   `is_admin=1` calls `POST /api/admin/login {email, password}` →
+   `200 {token, expires_at, email, name}` (opaque bearer, 12 h, sha256-stored,
+   revocable). Guests can never be admins. When neither a token is configured
+   nor any admin user exists, every `/api/admin/*` route answers `404`.
+
+Bootstrap: promote the first user with the env token —
+`PATCH /api/admin/users/:id {"is_admin": true}`.
+
+| Method & path | Response |
+|---|---|
+| `POST /api/admin/login` | `200 {token, expires_at, email, name}` — is_admin users only |
+| `DELETE /api/admin/session` | `204` — revoke the presented session token |
+| `GET /api/admin/me` | `200 {via: "token"\|"session", email?, name?}` |
+| `GET /api/admin/overview` | `200` — totals (users/guests/admins/books/words), 30-day series (signups, active readers, words), wpm histogram, top books, uptime, db size, version, edition |
+| `GET /api/admin/users?q=&limit=&offset=` | `200 {total, users: [{id, email, name, guest, is_admin, plan, pro_days, created_at, last_day, words}]}` |
+| `PATCH /api/admin/users/:id` | `200 {user}` — body `{is_admin?, plan?}`; only non-guest password/SSO accounts can become admins; a session admin cannot demote **themselves** (the token can) |
+| `DELETE /api/admin/users/:id` | `204` — full cascade delete; a session admin cannot delete themselves |
+| `GET /api/admin/announcement` | `200 {text, link, label, active, updated_at}` |
+| `PUT /api/admin/announcement` | `200` — same shape; `active: true` publishes it into `/api/meta` |
+| `GET/POST/DELETE /api/admin/events…` | events, unchanged (now also accept admin sessions) |
+
+**Banner (user site):** `GET /api/meta` gains
+`"announcement": {text, link, label} | null` (null unless active) and
+`"admin_url": string | null` (from `FLICK_ADMIN_URL`). The web client shows an
+announcement strip above the top bar; dismissing it is remembered locally
+(keyed by content, so a new announcement reappears). Signed-in `is_admin`
+users get an ADMIN entry in the account menu pointing at `admin_url`.
+
+**CORS:** the panel is a different origin, so when `FLICK_ADMIN_ORIGIN` is
+set the server answers CORS preflights allowing exactly that origin (headers
+`authorization, content-type`; no cookies — admin auth is bearer-only).
+
+User JSON (`/api/auth/me`) gains `"is_admin": bool`.
 
 ## Server config (env)
 
@@ -387,6 +435,9 @@ others. Everything not listed is unlimited.
 | `FLICK_SMTP_FROM` | From address for mail | `flick <no-reply@localhost>` |
 | `FLICK_DROPBOX_APP_KEY` | enables Dropbox Chooser | — |
 | `FLICK_GOOGLE_PICKER_API_KEY` | enables Google Picker (with google client id) | — |
+| `FLICK_ADMIN_TOKEN` | break-glass bearer for `/api/admin/*` (see Admin API) | — |
+| `FLICK_ADMIN_ORIGIN` | admin panel origin allowed via CORS (e.g. `https://admin.myflick.app`) | — |
+| `FLICK_ADMIN_URL` | admin panel URL surfaced in `/api/meta` for the ADMIN menu link | — |
 
 SPA fallback: unknown non-`/api` GET paths serve `index.html` from `FLICK_WEB_DIST`.
 
@@ -522,9 +573,8 @@ self-invites are permanently rejected ("unknown" IPs are never deduped).
 | `POST /api/admin/events` | `201 {event}` — `{kind: referral|free_pro|promo, title, starts_at, ends_at, payload?}` |
 | `GET /api/admin/events` · `DELETE /api/admin/events/:id` | list / end events |
 
-Admin routes require `Authorization: Bearer $FLICK_ADMIN_TOKEN`
-(constant-time compare; 404 when the env var is unset). The admin *panel*
-stays parked — events are curl-able today, UI later.
+Admin routes accept `Authorization: Bearer $FLICK_ADMIN_TOKEN` or an admin
+session token — see **Admin API & panel (v0.10)**.
 
 ### Social layer (v0.7)
 
