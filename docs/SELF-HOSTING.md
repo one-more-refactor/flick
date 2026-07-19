@@ -26,6 +26,23 @@ The first build compiles the Rust server and the Svelte client and bakes them
 into one image; your library lives in the `flick-data` volume. Configure it by
 adding `FLICK_*` variables to `docker-compose.yml` (see the table below).
 
+### The admin panel (optional)
+
+An operator panel — analytics, user management, events, and the site
+announcement banner ([flick-admin](https://github.com/one-more-refactor/flick-admin)):
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/one-more-refactor/flick/master/install.sh | sh -s -- --with-admin
+# or, in an existing checkout:
+FLICK_ADMIN_TOKEN=$(openssl rand -hex 24) docker compose --profile admin up -d
+```
+
+Panel → http://localhost:8485. First sign-in: choose *"use an admin token
+instead"* with your `FLICK_ADMIN_TOKEN`, open **users**, and *make admin* on
+your own account — from then on you sign in with your email + password. The
+installer stores the token and profile in `.env` so plain `docker compose up
+-d` keeps everything running.
+
 Podman: build the same image straight from the backend repo, then run it with a
 `flick-data` volume — or use the ready-made Quadlet units in that repo's
 `deploy/` (this is how [myflick.app](https://myflick.app) runs — rootless,

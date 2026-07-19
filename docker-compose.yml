@@ -1,12 +1,17 @@
 # flick — self-host in one command.
 #
-#   docker compose up -d      # then open http://localhost:8484
+#   docker compose up -d                       # app → http://localhost:8484
+#   docker compose --profile admin up -d       # + admin panel → http://localhost:8485
 #
 # Builds the combined image (API server + web client) straight from the
 # flick-backend repo, which pulls in the web client from flick-web. Nothing
 # to clone but this file. Your library lives in the named volume `flick-data`.
 #
-# Podman users: `podman build` the image from the backend repo, then run it —
+# The admin panel (profile `admin`) needs FLICK_ADMIN_TOKEN set (a `.env`
+# file next to this works) — sign in with that token, then promote your own
+# account under users. install.sh --with-admin sets all of this up.
+#
+# Podman users: `podman build` the images from the repos, then run them —
 # see docs/SELF-HOSTING.md. Everything here is free in the self-host edition.
 
 services:
@@ -22,10 +27,29 @@ services:
     environment:
       FLICK_EDITION: selfhost
       FLICK_PUBLIC_URL: http://localhost:8484
+      FLICK_ADMIN_TOKEN: ${FLICK_ADMIN_TOKEN:-}
+      FLICK_ADMIN_URL: ${FLICK_ADMIN_URL:-}
       # FLICK_SMTP_URL: smtps://user:pass@smtp.example.com:465   # email login codes
       # FLICK_OAUTH_GITHUB_CLIENT_ID / _SECRET, FLICK_OIDC_* ...  # optional SSO
     volumes:
       - flick-data:/data
+    networks:
+      default:
+        # the admin panel's nginx proxies /api to this name
+        aliases: [flick-backend]
+
+  flick-admin:
+    profiles: [admin]
+    build:
+      context: https://github.com/one-more-refactor/flick-admin.git
+      dockerfile: deploy/Containerfile
+    image: flick-admin:local
+    container_name: flick-admin
+    restart: unless-stopped
+    ports:
+      - "8485:80"
+    depends_on:
+      - flick
 
 volumes:
   flick-data:

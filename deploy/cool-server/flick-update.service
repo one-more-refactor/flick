@@ -1,0 +1,7 @@
+# ~/.config/systemd/user/flick-update.service
+[Unit]
+Description=flick auto-updater (rebuild from public repos on change)
+
+[Service]
+Type=oneshot
+ExecStart=%h/services/flick/update.sh
