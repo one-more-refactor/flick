@@ -666,6 +666,28 @@ hosted history window (90 days) server-side.
   sizing, no tap-flash / no rubber-band; at ≥1024px the library widens and the
   ALL list becomes two columns with hairline grid separators.
 
+## Web client v0.14 additions
+
+- **Octocat GitHub cube (v0.14.0).** The top-bar GITHUB chip is now an
+  octocat-marked cube (after uiverse/aguerquin's "pretty-bat", remapped onto
+  flick tokens — square, hairline, one accent, no shadow). A fixed inverse-video
+  mark box (`--ink` tile, GitHub mark) anchors a face that rolls up 90° on X to
+  an accent `OPEN SOURCE ↗` on hover; the outer border and mark-divider snap to
+  `--accent`. Reduced-motion never rolls; hidden below 470px. Supersedes the
+  v0.13.1 GITHUB flip chip (GO PREMIUM keeps its v0.13.1 flip).
+- **Wider desktop column (v0.14.0).** The centre column was a 1060/940px ribbon
+  that left most of a wide screen empty. Top bar and library now edge-align at
+  **max-width 1340px**; the ALL list becomes **three columns ≥1200px** (still a
+  1px hairline grid) so the width reads as a shelf, not stretched rows. The
+  reading column (760px) is unchanged — reading measure stays tight.
+- **Split-flap streak counter (v0.14.1).** The library DAY STREAK number is a
+  physical split-flap counter (`FlipCounter`/`FlipDigit`) instead of the
+  dot-matrix, which read as a broken glyph at stat size. Dark board tiles with a
+  centre seam; on change the old top folds down (`rotateX 0→-90`) as the new
+  bottom unfolds up (`90→0`) — the same flip family as the mode cube. Reduced
+  motion settles without the fold. Dot-matrix (`DotNumber`) is retained for
+  genuine hero numbers elsewhere (stats, wrapped, landing).
+
 ## Web client v0.13 additions
 
 - **3D flip chips (v0.13.1).** GITHUB and GO PREMIUM are true 3D elements in
