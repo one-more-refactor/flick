@@ -1,3 +1,4 @@
+<meta charset="utf-8">
 <title>Speedread — design mockup</title>
 <style>
   :root {
@@ -176,6 +177,7 @@
   .lib li.sel .idx, .lib li:hover .idx { color: var(--inverse-ink); opacity: 0.6; }
   .lib li.sel .pct, .lib li:hover .pct { color: var(--red); }
   .lib li.sel .idx::before { content: "▶ "; color: var(--red); }
+  .lib li:focus-visible { outline: 2px solid var(--red); outline-offset: -2px; }
   .hint {
     padding: 8px 14px; border-top: 1px solid var(--line);
     font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--dim);
@@ -217,11 +219,12 @@
   <!-- LIBRARY -->
   <section class="panel" aria-label="Library">
     <div class="panel-label"><span>Library</span><span class="counter">4 books</span></div>
-    <ul class="lib">
-      <li class="sel"><span class="idx">01</span><span class="title">The Art of War</span><span class="leader"></span><span class="pct">62%</span></li>
-      <li><span class="idx">02</span><span class="title">Meditations</span><span class="leader"></span><span class="pct">18%</span></li>
-      <li><span class="idx">03</span><span class="title">Flatland</span><span class="leader"></span><span class="pct">00%</span></li>
-      <li><span class="idx">04</span><span class="title">Walden</span><span class="leader"></span><span class="pct">91%</span></li>
+    <input type="file" id="file-picker" accept=".pdf,.txt,.epub" style="display: none;" aria-label="Add book">
+    <ul class="lib" role="listbox" aria-label="Books list">
+      <li tabindex="0" role="option" aria-selected="true" class="sel"><span class="idx">01</span><span class="title">The Art of War</span><span class="leader"></span><span class="pct">62%</span></li>
+      <li tabindex="0" role="option" aria-selected="false"><span class="idx">02</span><span class="title">Meditations</span><span class="leader"></span><span class="pct">18%</span></li>
+      <li tabindex="0" role="option" aria-selected="false"><span class="idx">03</span><span class="title">Flatland</span><span class="leader"></span><span class="pct">00%</span></li>
+      <li tabindex="0" role="option" aria-selected="false"><span class="idx">04</span><span class="title">Walden</span><span class="leader"></span><span class="pct">91%</span></li>
     </ul>
     <div class="hint">↑↓ select · <b>enter</b> read · <b>a</b> add book (pdf)</div>
   </section>
@@ -237,8 +240,13 @@
 </div>
 
 <script>
-  const TEXT = "You are reading one word at a time. The red letter anchors your eye, so it never has to move. Longer words linger a little; punctuation buys you a breath. Slide up to 800 and feel where your limit really is.";
-  const words = TEXT.split(/\s+/);
+  const BOOKS = [
+    { title: "The Art of War", text: "The art of war is of vital importance to the State. It is a matter of life and death, a road either to safety or to ruin. Hence it is a subject of inquiry which can on no account be neglected." },
+    { title: "Meditations", text: "Waste no more time arguing about what a good man should be. Be one. Look within. Within is the fountain of good, and it will ever bubble up, if thou wilt ever dig." },
+    { title: "Flatland", text: "I call our world Flatland, not because we call it so, but to make its nature clearer to you, my happy readers, who are privileged to live in Space." },
+    { title: "Walden", text: "I went to the woods because I wished to live deliberately, to front only the essential facts of life, and see if I could not learn what it had to teach, and not, when I came to die, discover that I had not lived." }
+  ];
+  let words = BOOKS[0].text.split(/\s+/);
 
   // Optimal Recognition Point — slightly left of center.
   function orp(w) {
@@ -264,8 +272,9 @@
   const playBtn = document.getElementById("play");
   const wpmInput = document.getElementById("wpm");
   const wpmVal = document.getElementById("wpmv");
+  const filePicker = document.getElementById("file-picker");
 
-  let i = 0, playing = false, timer = null;
+  let i = 0, playing = false, timer = null, currentSelection = 0;
   const pad = n => String(n).padStart(3, "0");
 
   function show(idx) {
@@ -300,9 +309,89 @@
     playBtn.textContent = "Play";
   }
 
+  const libItems = () => document.querySelectorAll(".lib li");
+  function selectBook(idx) {
+    if (idx < 0 || idx >= BOOKS.length) return;
+    currentSelection = idx;
+    stop();
+    libItems().forEach((li, index) => {
+      li.classList.toggle("sel", index === idx);
+      li.setAttribute("aria-selected", index === idx ? "true" : "false");
+      if (index === idx) li.focus();
+    });
+    words = BOOKS[idx].text.split(/\s+/);
+    i = 0;
+    show(0);
+  }
+
+  function setupItemListeners(li, index) {
+    li.addEventListener("click", () => selectBook(index));
+    li.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        selectBook((index + 1) % BOOKS.length);
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        selectBook((index - 1 + BOOKS.length) % BOOKS.length);
+      } else if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        selectBook(index);
+      }
+    });
+  }
+
+  libItems().forEach(setupItemListeners);
+
+  window.addEventListener("keydown", (e) => {
+    if (document.activeElement === wpmInput) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      selectBook((currentSelection + 1) % BOOKS.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      selectBook((currentSelection - 1 + BOOKS.length) % BOOKS.length);
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      selectBook(currentSelection);
+    } else if (e.key === " ") {
+      e.preventDefault();
+      playing ? stop() : start();
+    } else if (e.key === "ArrowRight" && !playing) {
+      e.preventDefault();
+      if (i < words.length - 1) show(++i);
+    } else if (e.key === "ArrowLeft" && !playing) {
+      e.preventDefault();
+      if (i > 0) show(--i);
+    } else if ((e.key === "a" || e.key === "A") && !e.ctrlKey && !e.metaKey) {
+      e.preventDefault();
+      filePicker.click();
+    }
+  });
+
+  filePicker.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const title = file.name.replace(/\.[^/.]+$/, "");
+      BOOKS.push({
+        title: title,
+        text: `You have successfully imported "${title}". This is a simulated preview of your imported file. Custom upload and parsing is fully supported in the production build of flick!`
+      });
+      const ul = document.querySelector(".lib");
+      const li = document.createElement("li");
+      li.setAttribute("tabindex", "0");
+      li.setAttribute("role", "option");
+      li.setAttribute("aria-selected", "false");
+      const pad2 = n => String(n).padStart(2, "0");
+      li.innerHTML = `<span class="idx">${pad2(BOOKS.length)}</span><span class="title">${title}</span><span class="leader"></span><span class="pct">00%</span>`;
+      ul.appendChild(li);
+      setupItemListeners(li, BOOKS.length - 1);
+      selectBook(BOOKS.length - 1);
+      ul.previousElementSibling.querySelector(".counter").textContent = `${BOOKS.length} books`;
+    }
+  });
+
   playBtn.addEventListener("click", () => playing ? stop() : start());
   wpmInput.addEventListener("input", () => { wpmVal.textContent = wpmInput.value; });
 
   show(0);
-  count.textContent = "001 / " + pad(words.length);
 </script>
