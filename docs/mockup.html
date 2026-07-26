@@ -1,3 +1,7 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
 <title>Speedread — design mockup</title>
 <style>
   :root {
@@ -171,11 +175,12 @@
     opacity: 0.5;
   }
   .lib .pct { color: var(--red); font-size: 12px; }
-  .lib li.sel, .lib li:hover { background: var(--ink); }
-  .lib li.sel .title, .lib li:hover .title { color: var(--inverse-ink); }
-  .lib li.sel .idx, .lib li:hover .idx { color: var(--inverse-ink); opacity: 0.6; }
-  .lib li.sel .pct, .lib li:hover .pct { color: var(--red); }
-  .lib li.sel .idx::before { content: "▶ "; color: var(--red); }
+  .lib li.sel, .lib li:hover, .lib li:focus-visible { background: var(--ink); }
+  .lib li.sel .title, .lib li:hover .title, .lib li:focus-visible .title { color: var(--inverse-ink); }
+  .lib li.sel .idx, .lib li:hover .idx, .lib li:focus-visible .idx { color: var(--inverse-ink); opacity: 0.6; }
+  .lib li.sel .pct, .lib li:hover .pct, .lib li:focus-visible .pct { color: var(--red); }
+  .lib li.sel .idx::before, .lib li:focus-visible .idx::before { content: "▶ "; color: var(--red); }
+  .lib li:focus-visible { outline: 2px solid var(--red); outline-offset: -2px; }
   .hint {
     padding: 8px 14px; border-top: 1px solid var(--line);
     font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--dim);
@@ -187,7 +192,8 @@
   .tok { display: flex; align-items: center; gap: 7px; font-size: 10px; color: var(--dim); letter-spacing: 0.08em; }
   .tok .chip { width: 14px; height: 14px; border: 1px solid var(--line); }
 </style>
-
+</head>
+<body>
 <div class="sheet">
   <header>
     <div class="wordmark">READ<span class="cursor">_</span></div>
@@ -216,14 +222,14 @@
 
   <!-- LIBRARY -->
   <section class="panel" aria-label="Library">
-    <div class="panel-label"><span>Library</span><span class="counter">4 books</span></div>
-    <ul class="lib">
-      <li class="sel"><span class="idx">01</span><span class="title">The Art of War</span><span class="leader"></span><span class="pct">62%</span></li>
-      <li><span class="idx">02</span><span class="title">Meditations</span><span class="leader"></span><span class="pct">18%</span></li>
-      <li><span class="idx">03</span><span class="title">Flatland</span><span class="leader"></span><span class="pct">00%</span></li>
-      <li><span class="idx">04</span><span class="title">Walden</span><span class="leader"></span><span class="pct">91%</span></li>
+    <div class="panel-label"><span>Library</span><span class="counter" id="lib-count">4 books</span></div>
+    <ul class="lib" id="lib" role="listbox" aria-label="Books list">
+      <li class="sel" tabindex="0" role="option" aria-selected="true" aria-label="The Art of War, 62 percent read"><span class="idx">01</span><span class="title">The Art of War</span><span class="leader"></span><span class="pct">62%</span></li>
+      <li tabindex="0" role="option" aria-selected="false" aria-label="Meditations, 18 percent read"><span class="idx">02</span><span class="title">Meditations</span><span class="leader"></span><span class="pct">18%</span></li>
+      <li tabindex="0" role="option" aria-selected="false" aria-label="Flatland, 0 percent read"><span class="idx">03</span><span class="title">Flatland</span><span class="leader"></span><span class="pct">00%</span></li>
+      <li tabindex="0" role="option" aria-selected="false" aria-label="Walden, 91 percent read"><span class="idx">04</span><span class="title">Walden</span><span class="leader"></span><span class="pct">91%</span></li>
     </ul>
-    <div class="hint">↑↓ select · <b>enter</b> read · <b>a</b> add book (pdf)</div>
+    <div class="hint">↑↓ select · <b>enter</b>/<b>space</b> read · <b>a</b> add book</div>
   </section>
 
   <!-- TOKENS -->
@@ -237,8 +243,17 @@
 </div>
 
 <script>
-  const TEXT = "You are reading one word at a time. The red letter anchors your eye, so it never has to move. Longer words linger a little; punctuation buys you a breath. Slide up to 800 and feel where your limit really is.";
-  const words = TEXT.split(/\s+/);
+  // Data model with different texts per book
+  const BOOKS_DATA = {
+    "The Art of War": "Sun Tzu said: The art of war is of vital importance to the State. It is a matter of life and death, a road either to safety or to ruin. Hence it is a subject of inquiry which can on no account be neglected. Therefore, measure your strength, prepare your strategies, and strike like thunder.",
+    "Meditations": "Our life is what our thoughts make it. Waste no more time arguing about what a good man should be. Be one. Look within. Within is the fountain of good, and it will ever bubble up, if thou wilt ever dig. Perfect tranquility consists in the good ordering of the mind.",
+    "Flatland": "I call our world Flatland, not because we call it so, but to make its nature clearer to you, my happy readers, who are privileged to live in Space. Imagine a vast sheet of paper on which Straight Lines, Triangles, Squares, Pentagons, Hexagons, and other figures, instead of remaining fixed in their places, move freely about.",
+    "Walden": "I went to the woods because I wished to live deliberately, to front only the essential facts of life, and see if I could not learn what it had to teach, and not, when I came to die, discover that I had not lived. Simplicity, simplicity, simplicity! I say, let your affairs be as two or three."
+  };
+
+  let currentBookTitle = "The Art of War";
+  let text = BOOKS_DATA[currentBookTitle];
+  let words = text.split(/\s+/);
 
   // Optimal Recognition Point — slightly left of center.
   function orp(w) {
@@ -264,11 +279,23 @@
   const playBtn = document.getElementById("play");
   const wpmInput = document.getElementById("wpm");
   const wpmVal = document.getElementById("wpmv");
+  const libEl = document.getElementById("lib");
+  const libCountEl = document.getElementById("lib-count");
 
   let i = 0, playing = false, timer = null;
   const pad = n => String(n).padStart(3, "0");
 
+  function loadBook(title) {
+    stop();
+    currentBookTitle = title;
+    text = BOOKS_DATA[title] || "Welcome to flick speedread app.";
+    words = text.split(/\s+/);
+    i = 0;
+    show(0);
+  }
+
   function show(idx) {
+    if (!words[idx]) return;
     const w = words[idx];
     const p = orp(w);
     wordEl.innerHTML =
@@ -303,6 +330,101 @@
   playBtn.addEventListener("click", () => playing ? stop() : start());
   wpmInput.addEventListener("input", () => { wpmVal.textContent = wpmInput.value; });
 
-  show(0);
-  count.textContent = "001 / " + pad(words.length);
+  // Update selection visually and load the corresponding book
+  function selectItem(li) {
+    Array.from(libEl.children).forEach(child => {
+      child.classList.remove("sel");
+      child.setAttribute("aria-selected", "false");
+    });
+    li.classList.add("sel");
+    li.setAttribute("aria-selected", "true");
+    const title = li.querySelector(".title").textContent;
+    loadBook(title);
+  }
+
+  // Click handler for library items
+  libEl.addEventListener("click", (e) => {
+    const li = e.target.closest("li");
+    if (li && libEl.contains(li)) {
+      selectItem(li);
+    }
+  });
+
+  // Dynamic Add Book handler
+  function addNewBook() {
+    const rawTitle = prompt("Enter book title:");
+    if (!rawTitle) return;
+    const title = rawTitle.trim();
+    if (!title) return;
+
+    const content = prompt("Enter book content / text:");
+    if (!content || !content.trim()) return;
+
+    // Add to our data store
+    BOOKS_DATA[title] = content.trim();
+
+    // Add to library UI
+    const countBooks = libEl.children.length + 1;
+    const idxStr = String(countBooks).padStart(2, "0");
+
+    const li = document.createElement("li");
+    li.tabIndex = 0;
+    li.setAttribute("role", "option");
+    li.setAttribute("aria-selected", "false");
+    li.setAttribute("aria-label", `${title}, 0 percent read`);
+    li.innerHTML = `<span class="idx">${idxStr}</span><span class="title">${title}</span><span class="leader"></span><span class="pct">00%</span>`;
+
+    libEl.appendChild(li);
+    libCountEl.textContent = `${countBooks} books`;
+
+    // Select the newly added book
+    selectItem(li);
+    li.focus();
+  }
+
+  // Keyboard navigation for library items & dynamic add
+  document.addEventListener("keydown", (e) => {
+    const active = document.activeElement;
+    const isLibraryFocused = active && active.tagName === "LI" && libEl.contains(active);
+
+    if (e.key === "a" || e.key === "A") {
+      // Avoid triggering when in prompt or input (though prompt blocks, this is good practice)
+      if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA")) return;
+      e.preventDefault();
+      addNewBook();
+      return;
+    }
+
+    if (isLibraryFocused) {
+      const children = Array.from(libEl.children);
+      const currentIndex = children.indexOf(active);
+
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        const nextIndex = (currentIndex + 1) % children.length;
+        children[nextIndex].focus();
+        selectItem(children[nextIndex]);
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        const prevIndex = (currentIndex - 1 + children.length) % children.length;
+        children[prevIndex].focus();
+        selectItem(children[prevIndex]);
+      } else if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        selectItem(active);
+        start();
+      }
+    } else {
+      // Global hotkeys when not focusing on library items (e.g. Space to play/pause)
+      if (e.key === " " && (!active || (active.tagName !== "INPUT" && active.tagName !== "BUTTON"))) {
+        e.preventDefault();
+        playing ? stop() : start();
+      }
+    }
+  });
+
+  // Initialize
+  loadBook("The Art of War");
 </script>
+</body>
+</html>
