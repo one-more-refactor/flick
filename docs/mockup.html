@@ -1,5 +1,9 @@
-<title>Speedread — design mockup</title>
-<style>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Speedread — design mockup</title>
+  <style>
   :root {
     --bg: #FAFAF7;
     --ink: #141110;
@@ -173,6 +177,7 @@
   .lib .pct { color: var(--red); font-size: 12px; }
   .lib li.sel, .lib li:hover { background: var(--ink); }
   .lib li.sel .title, .lib li:hover .title { color: var(--inverse-ink); }
+  .lib li:focus-visible { outline: 2px solid var(--red); outline-offset: -2px; }
   .lib li.sel .idx, .lib li:hover .idx { color: var(--inverse-ink); opacity: 0.6; }
   .lib li.sel .pct, .lib li:hover .pct { color: var(--red); }
   .lib li.sel .idx::before { content: "▶ "; color: var(--red); }
@@ -187,6 +192,8 @@
   .tok { display: flex; align-items: center; gap: 7px; font-size: 10px; color: var(--dim); letter-spacing: 0.08em; }
   .tok .chip { width: 14px; height: 14px; border: 1px solid var(--line); }
 </style>
+</head>
+<body>
 
 <div class="sheet">
   <header>
@@ -217,11 +224,11 @@
   <!-- LIBRARY -->
   <section class="panel" aria-label="Library">
     <div class="panel-label"><span>Library</span><span class="counter">4 books</span></div>
-    <ul class="lib">
-      <li class="sel"><span class="idx">01</span><span class="title">The Art of War</span><span class="leader"></span><span class="pct">62%</span></li>
-      <li><span class="idx">02</span><span class="title">Meditations</span><span class="leader"></span><span class="pct">18%</span></li>
-      <li><span class="idx">03</span><span class="title">Flatland</span><span class="leader"></span><span class="pct">00%</span></li>
-      <li><span class="idx">04</span><span class="title">Walden</span><span class="leader"></span><span class="pct">91%</span></li>
+    <ul class="lib" role="listbox" aria-label="Books list">
+      <li class="sel" role="option" aria-selected="true" tabindex="0"><span class="idx">01</span><span class="title">The Art of War</span><span class="leader"></span><span class="pct">62%</span></li>
+      <li role="option" aria-selected="false" tabindex="0"><span class="idx">02</span><span class="title">Meditations</span><span class="leader"></span><span class="pct">18%</span></li>
+      <li role="option" aria-selected="false" tabindex="0"><span class="idx">03</span><span class="title">Flatland</span><span class="leader"></span><span class="pct">00%</span></li>
+      <li role="option" aria-selected="false" tabindex="0"><span class="idx">04</span><span class="title">Walden</span><span class="leader"></span><span class="pct">91%</span></li>
     </ul>
     <div class="hint">↑↓ select · <b>enter</b> read · <b>a</b> add book (pdf)</div>
   </section>
@@ -237,8 +244,13 @@
 </div>
 
 <script>
-  const TEXT = "You are reading one word at a time. The red letter anchors your eye, so it never has to move. Longer words linger a little; punctuation buys you a breath. Slide up to 800 and feel where your limit really is.";
-  const words = TEXT.split(/\s+/);
+  const BOOK_TEXTS = [
+    "Sun Tzu said: The art of war is of vital importance to the State. It is a matter of life and death, a road either to safety or to ruin. Hence it is a subject of inquiry which can on no account be neglected.",
+    "Do not waste what remains of your life in speculating about your neighbors, unless with a view to some mutual benefit. To do so is to lose the opportunity of doing something else.",
+    "I call our world Flatland, not because we call it so, but to make its nature clearer to you, my happy readers, who are privileged to live in Space.",
+    "I went to the woods because I wished to live deliberately, to front only the essential facts of life, and see if I could not learn what it had to teach, and not, when I came to die, discover that I had not lived."
+  ];
+  let words = [];
 
   // Optimal Recognition Point — slightly left of center.
   function orp(w) {
@@ -303,6 +315,40 @@
   playBtn.addEventListener("click", () => playing ? stop() : start());
   wpmInput.addEventListener("input", () => { wpmVal.textContent = wpmInput.value; });
 
-  show(0);
-  count.textContent = "001 / " + pad(words.length);
+  const libItems = document.querySelectorAll(".lib li");
+  let selectedIdx = 0;
+  function loadBook(idx) {
+    words = BOOK_TEXTS[idx].split(/\s+/);
+    const pct = parseInt(libItems[idx].querySelector(".pct").textContent) / 100;
+    i = Math.floor(words.length * pct);
+    if (i >= words.length) i = 0;
+    show(i);
+  }
+  function selectBook(idx) {
+    stop();
+    libItems[selectedIdx].classList.remove("sel");
+    libItems[selectedIdx].setAttribute("aria-selected", "false");
+    selectedIdx = idx;
+    libItems[selectedIdx].classList.add("sel");
+    libItems[selectedIdx].setAttribute("aria-selected", "true");
+    loadBook(idx);
+  }
+  libItems.forEach((li, idx) => {
+    li.addEventListener("click", () => selectBook(idx));
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowDown") {
+      e.preventDefault(); selectBook((selectedIdx + 1) % libItems.length); libItems[selectedIdx].focus();
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault(); selectBook((selectedIdx - 1 + libItems.length) % libItems.length); libItems[selectedIdx].focus();
+    } else if (e.key === "Enter" && document.activeElement && document.activeElement.tagName === "LI") {
+      e.preventDefault(); playing ? stop() : start();
+    } else if (e.code === "Space") {
+      e.preventDefault(); playing ? stop() : start();
+    }
+  });
+
+  loadBook(0);
 </script>
+</body>
+</html>
