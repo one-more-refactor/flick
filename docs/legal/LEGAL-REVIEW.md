@@ -11,9 +11,8 @@ and the Impressum reviewed by a qualified lawyer in Germany before relying on
 them. Findings cite the file/feature they come from so they can be actioned and
 re-checked.
 
-**Basis of review:** commit state of the repo at
-`/home/philip/dev/projects/flick` and the marketing landing at
-`/home/philip/dev/projects/flick-landing` as read on 2026-07-18.
+**Basis of review:** commit state of the `flick` and `flick-landing`
+repositories as read on 2026-07-18.
 
 ---
 
