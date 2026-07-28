@@ -372,7 +372,26 @@
     li.setAttribute("role", "option");
     li.setAttribute("aria-selected", "false");
     li.setAttribute("aria-label", `${title}, 0 percent read`);
-    li.innerHTML = `<span class="idx">${idxStr}</span><span class="title">${title}</span><span class="leader"></span><span class="pct">00%</span>`;
+
+    const idxSpan = document.createElement("span");
+    idxSpan.className = "idx";
+    idxSpan.textContent = idxStr;
+
+    const titleSpan = document.createElement("span");
+    titleSpan.className = "title";
+    titleSpan.textContent = title;
+
+    const leaderSpan = document.createElement("span");
+    leaderSpan.className = "leader";
+
+    const pctSpan = document.createElement("span");
+    pctSpan.className = "pct";
+    pctSpan.textContent = "00%";
+
+    li.appendChild(idxSpan);
+    li.appendChild(titleSpan);
+    li.appendChild(leaderSpan);
+    li.appendChild(pctSpan);
 
     libEl.appendChild(li);
     libCountEl.textContent = `${countBooks} books`;
