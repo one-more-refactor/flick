@@ -21,6 +21,10 @@ mkdir -p "$SVC" "$QUAD" "$UNITS"
 install -m 0755 "$HERE/update.sh" "$SVC/update.sh"
 install -m 0644 "$HERE/flick-update.service" "$UNITS/flick-update.service"
 install -m 0644 "$HERE/flick-update.timer" "$UNITS/flick-update.timer"
+# The updater pulls and never builds, so the git-SHA state the old build-on-box
+# updater kept is dead weight — and a stale `versions` dir would be misleading
+# the next time someone reads the log next to it.
+rm -rf "$SVC/versions"
 
 # --- admin panel quadlets (fetched from the flick-admin repo) ---------------
 for f in flick.network flick-admin.container; do
@@ -39,6 +43,18 @@ else
   echo "!! $BACKEND missing — install the backend quadlet first (flick-backend/deploy)."
 fi
 
+# --- every unit must be registry-tracked, or the updater can't see it --------
+# `podman auto-update` only touches containers whose unit carries
+# AutoUpdate=registry and runs a registry image. A unit still pointing at a
+# locally built `localhost/…` image would silently never update again.
+for f in flick-backend.container flick-landing.container flick-admin.container; do
+  [ -f "$QUAD/$f" ] || continue
+  grep -q '^Image=ghcr\.io/one-more-refactor/' "$QUAD/$f" \
+    || echo "!! $QUAD/$f does not run a ghcr image — the updater pulls, it no longer builds."
+  grep -q '^AutoUpdate=registry' "$QUAD/$f" \
+    || echo "!! $QUAD/$f is missing AutoUpdate=registry — it will never be updated."
+done
+
 # --- ingress connector (host netns; only when a token is supplied) ----------
 if [ -n "${FLICK_TUNNEL_TOKEN:-}" ]; then
   umask 077
@@ -56,7 +72,7 @@ systemctl --user start flick-admin 2>/dev/null || true
 loginctl enable-linger "$USER" 2>/dev/null || true
 
 echo
-echo "✓ auto-updater installed (flick-update.timer, every 15 min; log: $SVC/update.log)"
+echo "✓ auto-updater installed — pull only (flick-update.timer, every 15 min; log: $SVC/update.log)"
 echo "✓ admin panel unit installed (127.0.0.1:3013)"
 [ -f "$UNITS/flick-cloudflared.service" ] && echo "✓ ingress connector installed (flick_prod tunnel)"
 echo

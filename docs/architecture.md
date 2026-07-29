@@ -204,15 +204,17 @@ flowchart LR
         cfd --> a["flick-admin<br/>:3013 nginx"]
         a -- "/api over flick.network" --> b
         b --- v[("volume flick-data<br/>SQLite")]
-        t["flick-update.timer<br/>every 15 min"] -. "git ls-remote → podman build → restart" .- b
+        t["flick-update.timer<br/>every 15 min"] -. "ghcr digest → podman pull → restart" .- b
         t -.- l
         t -.- a
         bk["flick-backup.timer<br/>nightly sqlite .backup ×14"] -.- v
     end
 ```
 
-Updates are **pull-based**: [`deploy/cool-server/update.sh`](../deploy/cool-server/update.sh)
-polls the public repos, rebuilds the affected image from the git URL (a
-`flick-web` push rebuilds the backend image, which bakes the client in), and
-only restarts a unit after a successful build. Self-hosters get the same
-images via [Compose](../docker-compose.yml) — see [SELF-HOSTING.md](SELF-HOSTING.md).
+Updates are **pull-only**: [`deploy/cool-server/update.sh`](../deploy/cool-server/update.sh)
+runs `podman auto-update`, which asks ghcr whether the digest behind the
+`:latest` tag each Quadlet tracks has moved, pulls only then, restarts only the
+units whose image actually changed, and rolls one back if it fails to come up.
+Nothing is built on the box, and CI publishes an image only on a `v*` tag — so
+production follows **releases**, not master. Self-hosters get the same images
+via [Compose](../docker-compose.yml) — see [SELF-HOSTING.md](SELF-HOSTING.md).
