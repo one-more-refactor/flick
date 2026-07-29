@@ -11,7 +11,7 @@
 [![guest-first](https://img.shields.io/badge/guest--first-no%20signup-d32f2f?labelColor=111111)](#how-it-works)
 [![versions in sync](https://github.com/one-more-refactor/flick/actions/workflows/versions.yml/badge.svg)](https://github.com/one-more-refactor/flick/actions/workflows/versions.yml)
 
-![landing → library → reader, playing](docs/media/flow.gif)
+![library → reader, playing — the app itself, nothing staged](docs/media/flow.gif)
 
 </div>
 
