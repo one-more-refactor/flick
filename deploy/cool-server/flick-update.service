@@ -1,6 +1,6 @@
 # ~/.config/systemd/user/flick-update.service
 [Unit]
-Description=flick auto-updater (rebuild from public repos on change)
+Description=flick auto-updater (pull released images from ghcr, restart on a new digest)
 
 [Service]
 Type=oneshot

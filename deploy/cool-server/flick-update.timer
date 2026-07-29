@@ -1,6 +1,6 @@
 # ~/.config/systemd/user/flick-update.timer
 [Unit]
-Description=poll flick repos every 15 minutes
+Description=poll ghcr for new flick release images every 15 minutes
 
 [Timer]
 OnBootSec=5min
