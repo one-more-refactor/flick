@@ -5,3 +5,7 @@
 ## 2026-07-28 - Raycast-Style Keycap Hints for Monospace Interfaces
 **Learning:** Monospace terminal/minimalist web mockups can feel text-heavy and make keyboard-navigable shortcuts obscure. Semantic `<kbd>` tags with high-contrast, square-corner, 1px/2px offset borders establish a strong visual metaphor of hardware keycaps, making accessibility controls instantly recognizable to power users without relying on distracting icons or colors.
 **Action:** Use a no-radius, high-contrast, double-layered bottom border `<kbd>` keycap pattern to elevate discoverability of keyboard commands in monospace design systems.
+
+## 2026-07-29 - Input Focus Safeguards and Roving Tabindex in Mockups
+**Learning:** Global keyboard listeners in mockups can hijack native input controls (like range sliders), preventing screen readers and power users from operating them correctly. Combining a roving tabindex pattern with explicit focus-state checks on input/textarea elements ensures correct, non-intrusive keyboard accessibility.
+**Action:** Ensure global key listeners check `document.activeElement` and bypass logic if an input or textarea has focus, and dynamically update `tabindex` attributes to maintain correct focus-ring order.

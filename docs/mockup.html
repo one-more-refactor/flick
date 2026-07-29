@@ -158,6 +158,25 @@
   .progress .fill { height: 100%; width: 0%; background: var(--red); }
 
   /* ---------- library ---------- */
+  .btn-add {
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--accent, var(--red));
+    font-family: inherit;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 3px 6px;
+    cursor: pointer;
+  }
+  .btn-add:hover {
+    background: var(--ink);
+    color: var(--inverse-ink);
+  }
+  .btn-add:focus-visible {
+    outline: 2px solid var(--red);
+    outline-offset: 1px;
+  }
   .lib { list-style: none; margin: 0; padding: 6px 0; }
   .lib li {
     display: flex; align-items: baseline; gap: 10px;
@@ -228,7 +247,9 @@
         <span class="pre">rea</span><span class="orp">d</span><span class="post">ing</span>
       </div>
     </div>
-    <div class="progress"><div class="fill" id="fill"></div></div>
+    <div class="progress" role="progressbar" aria-label="Reading progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+      <div class="fill" id="fill"></div>
+    </div>
     <div class="controls">
       <button class="play" id="play">Play</button>
       <div class="wpm-wrap">
@@ -240,12 +261,19 @@
 
   <!-- LIBRARY -->
   <section class="panel" aria-label="Library">
-    <div class="panel-label"><span>Library</span><span class="counter">4 books</span></div>
+    <div class="panel-label">
+      <span>Library</span>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <button class="btn-add" id="add-btn" aria-label="Add book">+ Add</button>
+        <span class="counter" id="lib-counter">4 books</span>
+      </div>
+    </div>
+    <input type="file" id="file-input" accept=".txt" style="display: none;">
     <ul class="lib" role="listbox" aria-label="Books list">
       <li class="sel" role="option" aria-selected="true" tabindex="0"><span class="idx">01</span><span class="title">The Art of War</span><span class="leader"></span><span class="pct">62%</span></li>
-      <li role="option" aria-selected="false" tabindex="0"><span class="idx">02</span><span class="title">Meditations</span><span class="leader"></span><span class="pct">18%</span></li>
-      <li role="option" aria-selected="false" tabindex="0"><span class="idx">03</span><span class="title">Flatland</span><span class="leader"></span><span class="pct">00%</span></li>
-      <li role="option" aria-selected="false" tabindex="0"><span class="idx">04</span><span class="title">Walden</span><span class="leader"></span><span class="pct">91%</span></li>
+      <li role="option" aria-selected="false" tabindex="-1"><span class="idx">02</span><span class="title">Meditations</span><span class="leader"></span><span class="pct">18%</span></li>
+      <li role="option" aria-selected="false" tabindex="-1"><span class="idx">03</span><span class="title">Flatland</span><span class="leader"></span><span class="pct">00%</span></li>
+      <li role="option" aria-selected="false" tabindex="-1"><span class="idx">04</span><span class="title">Walden</span><span class="leader"></span><span class="pct">91%</span></li>
     </ul>
     <div class="hint"><kbd>↑</kbd> <kbd>↓</kbd> select · <kbd>enter</kbd> read · <kbd>a</kbd> add book (pdf)</div>
   </section>
@@ -297,6 +325,8 @@
   let i = 0, playing = false, timer = null;
   const pad = n => String(n).padStart(3, "0");
 
+  const progressContainer = document.querySelector(".progress");
+
   function show(idx) {
     const w = words[idx];
     const p = orp(w);
@@ -305,7 +335,9 @@
     wordEl.children[0].textContent = w.slice(0, p);
     wordEl.children[1].textContent = w[p] || "";
     wordEl.children[2].textContent = w.slice(p + 1);
-    fill.style.width = ((idx + 1) / words.length * 100) + "%";
+    const pct = ((idx + 1) / words.length * 100);
+    fill.style.width = pct + "%";
+    progressContainer.setAttribute("aria-valuenow", Math.round(pct));
     count.textContent = pad(idx + 1) + " / " + pad(words.length);
   }
 
@@ -332,36 +364,109 @@
   playBtn.addEventListener("click", () => playing ? stop() : start());
   wpmInput.addEventListener("input", () => { wpmVal.textContent = wpmInput.value; });
 
-  const libItems = document.querySelectorAll(".lib li");
   let selectedIdx = 0;
   function loadBook(idx) {
+    const items = document.querySelectorAll(".lib li");
     words = BOOK_TEXTS[idx].split(/\s+/);
-    const pct = parseInt(libItems[idx].querySelector(".pct").textContent) / 100;
+    const pct = parseInt(items[idx].querySelector(".pct").textContent) / 100;
     i = Math.floor(words.length * pct);
     if (i >= words.length) i = 0;
     show(i);
   }
   function selectBook(idx) {
     stop();
-    libItems[selectedIdx].classList.remove("sel");
-    libItems[selectedIdx].setAttribute("aria-selected", "false");
+    const items = document.querySelectorAll(".lib li");
+    items[selectedIdx].classList.remove("sel");
+    items[selectedIdx].setAttribute("aria-selected", "false");
+    items[selectedIdx].setAttribute("tabindex", "-1");
     selectedIdx = idx;
-    libItems[selectedIdx].classList.add("sel");
-    libItems[selectedIdx].setAttribute("aria-selected", "true");
+    items[selectedIdx].classList.add("sel");
+    items[selectedIdx].setAttribute("aria-selected", "true");
+    items[selectedIdx].setAttribute("tabindex", "0");
     loadBook(idx);
   }
-  libItems.forEach((li, idx) => {
-    li.addEventListener("click", () => selectBook(idx));
+
+  function attachLibItemListeners() {
+    const items = document.querySelectorAll(".lib li");
+    items.forEach((li, idx) => {
+      // Avoid attaching duplicate event listeners
+      li.removeEventListener("click", li._clickListener);
+      li._clickListener = () => selectBook(idx);
+      li.addEventListener("click", li._clickListener);
+    });
+  }
+  attachLibItemListeners();
+  const fileInput = document.getElementById("file-input");
+  const addBtn = document.getElementById("add-btn");
+  const libCounter = document.getElementById("lib-counter");
+  const libList = document.querySelector(".lib");
+
+  addBtn.addEventListener("click", () => {
+    fileInput.click();
   });
+
+  fileInput.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const text = evt.target.result.trim();
+      if (!text) return;
+
+      // Extract title from the first line or file name
+      let title = file.name.replace(/\.[^/.]+$/, ""); // strip extension
+      const firstLine = text.split("\n")[0].trim();
+      if (firstLine && firstLine.length < 40) {
+        title = firstLine;
+      }
+
+      // Add to BOOK_TEXTS
+      BOOK_TEXTS.push(text);
+
+      // Create new list item
+      const newIdx = BOOK_TEXTS.length;
+      const formattedIdx = String(newIdx).padStart(2, "0");
+      const li = document.createElement("li");
+      li.setAttribute("role", "option");
+      li.setAttribute("aria-selected", "false");
+      li.setAttribute("tabindex", "-1");
+
+      li.innerHTML = `<span class="idx">${formattedIdx}</span><span class="title">${title}</span><span class="leader"></span><span class="pct">00%</span>`;
+      libList.appendChild(li);
+
+      // Update counters
+      libCounter.textContent = `${newIdx} books`;
+
+      // Refresh listeners and select the newly added book
+      attachLibItemListeners();
+      selectBook(newIdx - 1);
+
+      // Clear input
+      fileInput.value = "";
+    };
+    reader.readAsText(file);
+  });
+
   document.addEventListener("keydown", (e) => {
+    // If the user is currently focused on an input element (like the range slider),
+    // let the browser handle key events natively for accessibility.
+    if (document.activeElement && (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "TEXTAREA")) {
+      return;
+    }
+
+    const items = document.querySelectorAll(".lib li");
     if (e.key === "ArrowDown") {
-      e.preventDefault(); selectBook((selectedIdx + 1) % libItems.length); libItems[selectedIdx].focus();
+      e.preventDefault(); selectBook((selectedIdx + 1) % items.length); items[selectedIdx].focus();
     } else if (e.key === "ArrowUp") {
-      e.preventDefault(); selectBook((selectedIdx - 1 + libItems.length) % libItems.length); libItems[selectedIdx].focus();
+      e.preventDefault(); selectBook((selectedIdx - 1 + items.length) % items.length); items[selectedIdx].focus();
     } else if (e.key === "Enter" && document.activeElement && document.activeElement.tagName === "LI") {
       e.preventDefault(); playing ? stop() : start();
     } else if (e.code === "Space") {
       e.preventDefault(); playing ? stop() : start();
+    } else if (e.key === "a" || e.key === "A") {
+      e.preventDefault();
+      fileInput.click();
     }
   });
 
