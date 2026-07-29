@@ -6,9 +6,9 @@
 
 [**myflick.app**](https://myflick.app) · [self-host](#self-host) · [architecture](#how-it-works) · [the research](https://myflick.app/science/) · [contracts](docs/CONTRACTS.md)
 
-[![license: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-d32f2f?labelColor=111111)](LICENSE)
-[![self-hostable](https://img.shields.io/badge/self--hostable-one%20command-d32f2f?labelColor=111111)](#self-host)
-[![guest-first](https://img.shields.io/badge/guest--first-no%20signup-d32f2f?labelColor=111111)](#how-it-works)
+[![license: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-f2ede5?labelColor=111111)](LICENSE)
+[![self-hostable](https://img.shields.io/badge/self--hostable-one%20command-f2ede5?labelColor=111111)](#self-host)
+[![guest-first](https://img.shields.io/badge/guest--first-no%20signup-f2ede5?labelColor=111111)](#how-it-works)
 [![versions in sync](https://github.com/one-more-refactor/flick/actions/workflows/versions.yml/badge.svg)](https://github.com/one-more-refactor/flick/actions/workflows/versions.yml)
 
 ![library → reader, playing — the app itself, nothing staged](docs/media/flow.gif)
@@ -82,11 +82,11 @@ Small, single-purpose, one contract. Every repo tests on every push; tagging `vX
 | Repo | What it is | Release |
 |---|---|---|
 | **flick** (this one) | Umbrella: docs, [contract](docs/CONTRACTS.md), installer, Compose, [legal](docs/legal) | — |
-| [**flick-backend**](https://github.com/one-more-refactor/flick-backend) | Rust — engine (`flick-core`) + API server (`flick-server`) | [![release](https://img.shields.io/github/v/release/one-more-refactor/flick-backend?label=&labelColor=111111&color=d32f2f)](https://github.com/one-more-refactor/flick-backend/releases/latest) |
-| [**flick-web**](https://github.com/one-more-refactor/flick-web) | Svelte 5 web client — the reference implementation | [![release](https://img.shields.io/github/v/release/one-more-refactor/flick-web?label=&labelColor=111111&color=d32f2f)](https://github.com/one-more-refactor/flick-web/releases/latest) |
-| [**flick-landing**](https://github.com/one-more-refactor/flick-landing) | Astro site behind [myflick.app](https://myflick.app) | [![release](https://img.shields.io/github/v/release/one-more-refactor/flick-landing?label=&labelColor=111111&color=d32f2f)](https://github.com/one-more-refactor/flick-landing/releases/latest) |
-| [**flick-admin**](https://github.com/one-more-refactor/flick-admin) | Operator panel — analytics, users, events, announcements | [![release](https://img.shields.io/github/v/release/one-more-refactor/flick-admin?label=&labelColor=111111&color=d32f2f)](https://github.com/one-more-refactor/flick-admin/releases/latest) |
-| [**corepanel**](https://github.com/one-more-refactor/corepanel) | The generic admin-panel toolkit flick-admin is built on (MIT) | [![release](https://img.shields.io/github/v/release/one-more-refactor/corepanel?label=&labelColor=111111&color=d32f2f)](https://github.com/one-more-refactor/corepanel/releases/latest) |
+| [**flick-backend**](https://github.com/one-more-refactor/flick-backend) | Rust — engine (`flick-core`) + API server (`flick-server`) | [![release](https://img.shields.io/github/v/release/one-more-refactor/flick-backend?label=&labelColor=111111&color=f2ede5)](https://github.com/one-more-refactor/flick-backend/releases/latest) |
+| [**flick-web**](https://github.com/one-more-refactor/flick-web) | Svelte 5 web client — the reference implementation | [![release](https://img.shields.io/github/v/release/one-more-refactor/flick-web?label=&labelColor=111111&color=f2ede5)](https://github.com/one-more-refactor/flick-web/releases/latest) |
+| [**flick-landing**](https://github.com/one-more-refactor/flick-landing) | Astro site behind [myflick.app](https://myflick.app) | [![release](https://img.shields.io/github/v/release/one-more-refactor/flick-landing?label=&labelColor=111111&color=f2ede5)](https://github.com/one-more-refactor/flick-landing/releases/latest) |
+| [**flick-admin**](https://github.com/one-more-refactor/flick-admin) | Operator panel — analytics, users, events, announcements | [![release](https://img.shields.io/github/v/release/one-more-refactor/flick-admin?label=&labelColor=111111&color=f2ede5)](https://github.com/one-more-refactor/flick-admin/releases/latest) |
+| [**corepanel**](https://github.com/one-more-refactor/corepanel) | The generic admin-panel toolkit flick-admin is built on (MIT) | [![release](https://img.shields.io/github/v/release/one-more-refactor/corepanel?label=&labelColor=111111&color=f2ede5)](https://github.com/one-more-refactor/corepanel/releases/latest) |
 
 ## Privacy, licence, contributing
 
