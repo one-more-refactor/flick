@@ -81,7 +81,7 @@ Small, single-purpose, one contract. Every repo tests on every push; tagging `vX
 
 | Repo | What it is | Release |
 |---|---|---|
-| **flick** (this one) | Umbrella: docs, [contract](docs/CONTRACTS.md), installer, Compose, [legal](docs/legal) | — |
+| **flick** (this one) | Umbrella: docs, [contract](docs/CONTRACTS.md), installer, Compose, [legal](docs/legal) | [![release](https://img.shields.io/github/v/release/one-more-refactor/flick?label=&labelColor=111111&color=f2ede5)](https://github.com/one-more-refactor/flick/releases/latest) |
 | [**flick-backend**](https://github.com/one-more-refactor/flick-backend) | Rust — engine (`flick-core`) + API server (`flick-server`) | [![release](https://img.shields.io/github/v/release/one-more-refactor/flick-backend?label=&labelColor=111111&color=f2ede5)](https://github.com/one-more-refactor/flick-backend/releases/latest) |
 | [**flick-web**](https://github.com/one-more-refactor/flick-web) | Svelte 5 web client — the reference implementation | [![release](https://img.shields.io/github/v/release/one-more-refactor/flick-web?label=&labelColor=111111&color=f2ede5)](https://github.com/one-more-refactor/flick-web/releases/latest) |
 | [**flick-landing**](https://github.com/one-more-refactor/flick-landing) | Astro site behind [myflick.app](https://myflick.app) | [![release](https://img.shields.io/github/v/release/one-more-refactor/flick-landing?label=&labelColor=111111&color=f2ede5)](https://github.com/one-more-refactor/flick-landing/releases/latest) |
