@@ -240,13 +240,14 @@
 
   <!-- LIBRARY -->
   <section class="panel" aria-label="Library">
-    <div class="panel-label"><span>Library</span><span class="counter">4 books</span></div>
+    <div class="panel-label"><span>Library</span><span class="counter" id="lib-counter">4 books</span></div>
     <ul class="lib" role="listbox" aria-label="Books list">
       <li class="sel" role="option" aria-selected="true" tabindex="0"><span class="idx">01</span><span class="title">The Art of War</span><span class="leader"></span><span class="pct">62%</span></li>
       <li role="option" aria-selected="false" tabindex="0"><span class="idx">02</span><span class="title">Meditations</span><span class="leader"></span><span class="pct">18%</span></li>
       <li role="option" aria-selected="false" tabindex="0"><span class="idx">03</span><span class="title">Flatland</span><span class="leader"></span><span class="pct">00%</span></li>
       <li role="option" aria-selected="false" tabindex="0"><span class="idx">04</span><span class="title">Walden</span><span class="leader"></span><span class="pct">91%</span></li>
     </ul>
+    <input type="file" id="add-book-file" accept=".pdf,.txt,.epub" style="display:none">
     <div class="hint"><kbd>↑</kbd> <kbd>↓</kbd> select · <kbd>enter</kbd> read · <kbd>a</kbd> add book (pdf)</div>
   </section>
 
@@ -332,36 +333,122 @@
   playBtn.addEventListener("click", () => playing ? stop() : start());
   wpmInput.addEventListener("input", () => { wpmVal.textContent = wpmInput.value; });
 
-  const libItems = document.querySelectorAll(".lib li");
+  function getLibItems() {
+    return document.querySelectorAll(".lib li");
+  }
   let selectedIdx = 0;
   function loadBook(idx) {
     words = BOOK_TEXTS[idx].split(/\s+/);
-    const pct = parseInt(libItems[idx].querySelector(".pct").textContent) / 100;
+    const items = getLibItems();
+    const pct = parseInt(items[idx].querySelector(".pct").textContent) / 100;
     i = Math.floor(words.length * pct);
     if (i >= words.length) i = 0;
     show(i);
   }
   function selectBook(idx) {
     stop();
-    libItems[selectedIdx].classList.remove("sel");
-    libItems[selectedIdx].setAttribute("aria-selected", "false");
+    const items = getLibItems();
+    items[selectedIdx].classList.remove("sel");
+    items[selectedIdx].setAttribute("aria-selected", "false");
     selectedIdx = idx;
-    libItems[selectedIdx].classList.add("sel");
-    libItems[selectedIdx].setAttribute("aria-selected", "true");
+    items[selectedIdx].classList.add("sel");
+    items[selectedIdx].setAttribute("aria-selected", "true");
     loadBook(idx);
   }
-  libItems.forEach((li, idx) => {
+  getLibItems().forEach((li, idx) => {
     li.addEventListener("click", () => selectBook(idx));
   });
+
+  const fileInput = document.getElementById("add-book-file");
+  const libContainer = document.querySelector(".lib");
+  const libCounter = document.getElementById("lib-counter");
+
+  fileInput.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    let title = file.name.replace(/\.[^/.]+$/, "");
+    title = title.replace(/[_-]/g, " ").trim();
+    if (title.length > 25) {
+      title = title.substring(0, 22) + "...";
+    }
+
+    const items = getLibItems();
+    const nextIdx = items.length;
+    const numStr = String(nextIdx + 1).padStart(2, "0");
+
+    const li = document.createElement("li");
+    li.setAttribute("role", "option");
+    li.setAttribute("aria-selected", "false");
+    li.setAttribute("tabindex", "0");
+
+    const idxSpan = document.createElement("span");
+    idxSpan.className = "idx";
+    idxSpan.textContent = numStr;
+
+    const titleSpan = document.createElement("span");
+    titleSpan.className = "title";
+    titleSpan.textContent = title;
+
+    const leaderSpan = document.createElement("span");
+    leaderSpan.className = "leader";
+
+    const pctSpan = document.createElement("span");
+    pctSpan.className = "pct";
+    pctSpan.textContent = "00%";
+
+    li.appendChild(idxSpan);
+    li.appendChild(titleSpan);
+    li.appendChild(leaderSpan);
+    li.appendChild(pctSpan);
+
+    li.addEventListener("click", () => selectBook(nextIdx));
+    libContainer.appendChild(li);
+
+    const finishAdd = (text) => {
+      BOOK_TEXTS.push(text);
+      libCounter.textContent = `${nextIdx + 1} books`;
+      selectBook(nextIdx);
+      getLibItems()[nextIdx].focus();
+    };
+
+    if (file.type === "text/plain") {
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        const text = evt.target.result.trim() || `No text found in ${file.name}.`;
+        finishAdd(text);
+      };
+      reader.readAsText(file);
+    } else {
+      const text = `You successfully imported ${file.name} into your flick library. Optimal recognition point alignment allows you to pace through long words easily. Adjust your words-per-minute speed below and enjoy reading.`;
+      finishAdd(text);
+    }
+    fileInput.value = "";
+  });
+
   document.addEventListener("keydown", (e) => {
+    const active = document.activeElement;
+    if (active && (
+      active.tagName === "INPUT" ||
+      active.tagName === "TEXTAREA" ||
+      active.tagName === "SELECT" ||
+      active.tagName === "BUTTON" ||
+      active.isContentEditable
+    )) {
+      return;
+    }
+    const items = getLibItems();
     if (e.key === "ArrowDown") {
-      e.preventDefault(); selectBook((selectedIdx + 1) % libItems.length); libItems[selectedIdx].focus();
+      e.preventDefault(); selectBook((selectedIdx + 1) % items.length); items[selectedIdx].focus();
     } else if (e.key === "ArrowUp") {
-      e.preventDefault(); selectBook((selectedIdx - 1 + libItems.length) % libItems.length); libItems[selectedIdx].focus();
-    } else if (e.key === "Enter" && document.activeElement && document.activeElement.tagName === "LI") {
+      e.preventDefault(); selectBook((selectedIdx - 1 + items.length) % items.length); items[selectedIdx].focus();
+    } else if (e.key === "Enter" && active && active.tagName === "LI") {
       e.preventDefault(); playing ? stop() : start();
     } else if (e.code === "Space") {
       e.preventDefault(); playing ? stop() : start();
+    } else if (e.key === "a" || e.key === "A") {
+      e.preventDefault();
+      fileInput.click();
     }
   });
 
