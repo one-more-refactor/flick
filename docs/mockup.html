@@ -190,6 +190,18 @@
     flex-wrap: wrap;
   }
   .hint b { color: var(--red); font-weight: 400; }
+  #add-book-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    text-decoration: underline dotted;
+    text-underline-offset: 2px;
+  }
+  #add-book-trigger:focus-visible {
+    outline: 1px solid var(--red);
+    outline-offset: 2px;
+  }
 
   kbd {
     border: 1px solid var(--line);
@@ -240,14 +252,18 @@
 
   <!-- LIBRARY -->
   <section class="panel" aria-label="Library">
-    <div class="panel-label"><span>Library</span><span class="counter">4 books</span></div>
-    <ul class="lib" role="listbox" aria-label="Books list">
+    <div class="panel-label"><span>Library</span><span class="counter" id="lib-count">4 books</span></div>
+    <ul class="lib" role="listbox" aria-label="Books list" id="lib-list">
       <li class="sel" role="option" aria-selected="true" tabindex="0"><span class="idx">01</span><span class="title">The Art of War</span><span class="leader"></span><span class="pct">62%</span></li>
       <li role="option" aria-selected="false" tabindex="0"><span class="idx">02</span><span class="title">Meditations</span><span class="leader"></span><span class="pct">18%</span></li>
       <li role="option" aria-selected="false" tabindex="0"><span class="idx">03</span><span class="title">Flatland</span><span class="leader"></span><span class="pct">00%</span></li>
       <li role="option" aria-selected="false" tabindex="0"><span class="idx">04</span><span class="title">Walden</span><span class="leader"></span><span class="pct">91%</span></li>
     </ul>
-    <div class="hint"><kbd>↑</kbd> <kbd>↓</kbd> select · <kbd>enter</kbd> read · <kbd>a</kbd> add book (pdf)</div>
+    <div class="hint">
+      <kbd>↑</kbd> <kbd>↓</kbd> select · <kbd>enter</kbd> read ·
+      <span role="button" tabindex="0" aria-label="Add book" id="add-book-trigger"><kbd>a</kbd> add book (pdf/txt)</span>
+      <input type="file" id="file-upload" accept=".txt,.pdf" style="display:none">
+    </div>
   </section>
 
   <!-- TOKENS -->
@@ -332,7 +348,7 @@
   playBtn.addEventListener("click", () => playing ? stop() : start());
   wpmInput.addEventListener("input", () => { wpmVal.textContent = wpmInput.value; });
 
-  const libItems = document.querySelectorAll(".lib li");
+  let libItems = Array.from(document.querySelectorAll(".lib li"));
   let selectedIdx = 0;
   function loadBook(idx) {
     words = BOOK_TEXTS[idx].split(/\s+/);
@@ -350,10 +366,97 @@
     libItems[selectedIdx].setAttribute("aria-selected", "true");
     loadBook(idx);
   }
-  libItems.forEach((li, idx) => {
+  function bindLibItemEvents(li, idx) {
     li.addEventListener("click", () => selectBook(idx));
+  }
+  libItems.forEach(bindLibItemEvents);
+
+  // File Upload logic
+  const fileUpload = document.getElementById("file-upload");
+  const addBookTrigger = document.getElementById("add-book-trigger");
+  const libCount = document.getElementById("lib-count");
+  const libList = document.getElementById("lib-list");
+
+  function triggerUpload() {
+    fileUpload.click();
+  }
+
+  addBookTrigger.addEventListener("click", triggerUpload);
+  addBookTrigger.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      triggerUpload();
+    }
   });
+
+  fileUpload.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const safeName = file.name.replace(/\.[^/.]+$/, ""); // Strip extension safely
+
+    if (file.name.endsWith(".txt")) {
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        addBookToLibrary(safeName, evt.target.result);
+      };
+      reader.readAsText(file);
+    } else {
+      // Mock PDF / other formats with a premium placeholder
+      const mockText = `This is a high-fidelity mockup of speed reading the uploaded file: "${safeName}". RSVP alignment helps you absorb document information 2-3x faster without standard saccadic eye movements. Enjoy reading this file seamlessly!`;
+      addBookToLibrary(safeName, mockText);
+    }
+  });
+
+  function addBookToLibrary(titleText, contentText) {
+    BOOK_TEXTS.push(contentText);
+    const newIdxVal = BOOK_TEXTS.length;
+    const pad = n => String(n).padStart(2, "0");
+
+    const li = document.createElement("li");
+    li.setAttribute("role", "option");
+    li.setAttribute("aria-selected", "false");
+    li.setAttribute("tabindex", "0");
+
+    const spanIdx = document.createElement("span");
+    spanIdx.className = "idx";
+    spanIdx.textContent = pad(newIdxVal);
+
+    const spanTitle = document.createElement("span");
+    spanTitle.className = "title";
+    spanTitle.textContent = titleText;
+
+    const spanLeader = document.createElement("span");
+    spanLeader.className = "leader";
+
+    const spanPct = document.createElement("span");
+    spanPct.className = "pct";
+    spanPct.textContent = "00%";
+
+    li.appendChild(spanIdx);
+    li.appendChild(spanTitle);
+    li.appendChild(spanLeader);
+    li.appendChild(spanPct);
+
+    libList.appendChild(li);
+
+    // Update state
+    libItems = Array.from(document.querySelectorAll(".lib li"));
+    bindLibItemEvents(li, libItems.length - 1);
+
+    // Update books counter safely
+    libCount.textContent = `${libItems.length} books`;
+
+    // Immediately select and load
+    selectBook(libItems.length - 1);
+  }
+
   document.addEventListener("keydown", (e) => {
+    // Prevent hijacking global keys when interactive elements (e.g. input) are focused
+    if (document.activeElement && (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "TEXTAREA" || document.activeElement.isContentEditable)) {
+      return;
+    }
+
     if (e.key === "ArrowDown") {
       e.preventDefault(); selectBook((selectedIdx + 1) % libItems.length); libItems[selectedIdx].focus();
     } else if (e.key === "ArrowUp") {
@@ -362,6 +465,9 @@
       e.preventDefault(); playing ? stop() : start();
     } else if (e.code === "Space") {
       e.preventDefault(); playing ? stop() : start();
+    } else if (e.key === "a" || e.key === "A") {
+      e.preventDefault();
+      triggerUpload();
     }
   });
 
