@@ -5,3 +5,7 @@
 ## 2026-07-28 - Raycast-Style Keycap Hints for Monospace Interfaces
 **Learning:** Monospace terminal/minimalist web mockups can feel text-heavy and make keyboard-navigable shortcuts obscure. Semantic `<kbd>` tags with high-contrast, square-corner, 1px/2px offset borders establish a strong visual metaphor of hardware keycaps, making accessibility controls instantly recognizable to power users without relying on distracting icons or colors.
 **Action:** Use a no-radius, high-contrast, double-layered bottom border `<kbd>` keycap pattern to elevate discoverability of keyboard commands in monospace design systems.
+
+## 2026-07-29 - Preventing Shortcut Hijacking on Native Form Controls
+**Learning:** Adding global keyboard listeners (e.g., Spacebar for Play/Pause, Arrow keys for navigation) in minimal/monospace mockups often hijacks standard browser actions on native focusable controls (such as adjusting a `<input type="range">` or pressing `<button>`). Checking event targets beforehand ensures standard interactive accessibility remains functional.
+**Action:** Always bypass global `keydown`/`keyup` handlers if the active event target is a native form control (`INPUT`, `TEXTAREA`, `BUTTON`, `SELECT`, or `isContentEditable`).

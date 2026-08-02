@@ -354,6 +354,9 @@
     li.addEventListener("click", () => selectBook(idx));
   });
   document.addEventListener("keydown", (e) => {
+    if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA" || e.target.tagName === "BUTTON" || e.target.tagName === "SELECT" || e.target.isContentEditable) {
+      return;
+    }
     if (e.key === "ArrowDown") {
       e.preventDefault(); selectBook((selectedIdx + 1) % libItems.length); libItems[selectedIdx].focus();
     } else if (e.key === "ArrowUp") {
