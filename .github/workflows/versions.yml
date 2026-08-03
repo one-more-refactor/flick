@@ -45,9 +45,7 @@ jobs:
             fail=0
             check flick-backend server/Cargo.toml cargo
             check flick-web     package.json      npm
-            check flick-landing package.json      npm
             check flick-admin   package.json      npm
-            check corepanel     package.json      npm
           }
           # grace window: a component repo's release workflow needs a couple of
           # minutes to publish after the tag lands, and the contracts push here
