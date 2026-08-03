@@ -247,7 +247,7 @@
       <li role="option" aria-selected="false" tabindex="0"><span class="idx">03</span><span class="title">Flatland</span><span class="leader"></span><span class="pct">00%</span></li>
       <li role="option" aria-selected="false" tabindex="0"><span class="idx">04</span><span class="title">Walden</span><span class="leader"></span><span class="pct">91%</span></li>
     </ul>
-    <div class="hint"><kbd>↑</kbd> <kbd>↓</kbd> select · <kbd>enter</kbd> read · <kbd>a</kbd> add book (pdf)</div>
+    <div class="hint"><kbd>↑</kbd> <kbd>↓</kbd> select · <kbd>space</kbd> play/pause · <kbd>enter</kbd> read · <kbd>a</kbd> add book (pdf)</div>
   </section>
 
   <!-- TOKENS -->
@@ -259,6 +259,8 @@
     <span class="tok">mono · both themes · red only accent</span>
   </footer>
 </div>
+
+<input type="file" id="file-upload" accept=".pdf,.epub,.txt,.md" style="display: none;">
 
 <script>
   const BOOK_TEXTS = [
@@ -332,37 +334,142 @@
   playBtn.addEventListener("click", () => playing ? stop() : start());
   wpmInput.addEventListener("input", () => { wpmVal.textContent = wpmInput.value; });
 
-  const libItems = document.querySelectorAll(".lib li");
   let selectedIdx = 0;
   function loadBook(idx) {
     words = BOOK_TEXTS[idx].split(/\s+/);
-    const pct = parseInt(libItems[idx].querySelector(".pct").textContent) / 100;
+    const items = document.querySelectorAll(".lib li");
+    const pct = parseInt(items[idx].querySelector(".pct").textContent) / 100;
     i = Math.floor(words.length * pct);
     if (i >= words.length) i = 0;
     show(i);
   }
   function selectBook(idx) {
     stop();
-    libItems[selectedIdx].classList.remove("sel");
-    libItems[selectedIdx].setAttribute("aria-selected", "false");
+    const items = document.querySelectorAll(".lib li");
+    if (items[selectedIdx]) {
+      items[selectedIdx].classList.remove("sel");
+      items[selectedIdx].setAttribute("aria-selected", "false");
+    }
     selectedIdx = idx;
-    libItems[selectedIdx].classList.add("sel");
-    libItems[selectedIdx].setAttribute("aria-selected", "true");
+    if (items[selectedIdx]) {
+      items[selectedIdx].classList.add("sel");
+      items[selectedIdx].setAttribute("aria-selected", "true");
+    }
     loadBook(idx);
   }
-  libItems.forEach((li, idx) => {
-    li.addEventListener("click", () => selectBook(idx));
-  });
+
+  function bindInitialItems() {
+    document.querySelectorAll(".lib li").forEach((li, idx) => {
+      li.addEventListener("click", () => selectBook(idx));
+    });
+  }
+  bindInitialItems();
+
   document.addEventListener("keydown", (e) => {
-    if (e.key === "ArrowDown") {
-      e.preventDefault(); selectBook((selectedIdx + 1) % libItems.length); libItems[selectedIdx].focus();
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault(); selectBook((selectedIdx - 1 + libItems.length) % libItems.length); libItems[selectedIdx].focus();
-    } else if (e.key === "Enter" && document.activeElement && document.activeElement.tagName === "LI") {
-      e.preventDefault(); playing ? stop() : start();
-    } else if (e.code === "Space") {
-      e.preventDefault(); playing ? stop() : start();
+    const active = document.activeElement;
+    if (active && (
+      active.tagName === "INPUT" ||
+      active.tagName === "TEXTAREA" ||
+      active.tagName === "SELECT" ||
+      active.tagName === "BUTTON" ||
+      active.isContentEditable
+    )) {
+      return;
     }
+
+    const items = document.querySelectorAll(".lib li");
+    if (!items.length) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      const nextIdx = (selectedIdx + 1) % items.length;
+      selectBook(nextIdx);
+      items[nextIdx].focus();
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      const prevIdx = (selectedIdx - 1 + items.length) % items.length;
+      selectBook(prevIdx);
+      items[prevIdx].focus();
+    } else if (e.key === "Enter" && active && active.tagName === "LI") {
+      e.preventDefault();
+      playing ? stop() : start();
+    } else if (e.code === "Space") {
+      e.preventDefault();
+      playing ? stop() : start();
+    } else if (e.key === "a" || e.key === "A") {
+      e.preventDefault();
+      document.getElementById("file-upload").click();
+    }
+  });
+
+  function addBookToLibrary(title, text) {
+    BOOK_TEXTS.push(text);
+    const libUl = document.querySelector(".lib");
+    const items = libUl.querySelectorAll("li");
+    const newIdx = items.length + 1;
+    const pad = n => String(n).padStart(2, "0");
+
+    const li = document.createElement("li");
+    li.setAttribute("role", "option");
+    li.setAttribute("aria-selected", "false");
+    li.setAttribute("tabindex", "0");
+
+    const idxSpan = document.createElement("span");
+    idxSpan.className = "idx";
+    idxSpan.textContent = pad(newIdx);
+
+    const titleSpan = document.createElement("span");
+    titleSpan.className = "title";
+    titleSpan.textContent = title;
+
+    const leaderSpan = document.createElement("span");
+    leaderSpan.className = "leader";
+
+    const pctSpan = document.createElement("span");
+    pctSpan.className = "pct";
+    pctSpan.textContent = "00%";
+
+    li.appendChild(idxSpan);
+    li.appendChild(titleSpan);
+    li.appendChild(leaderSpan);
+    li.appendChild(pctSpan);
+
+    li.addEventListener("click", () => {
+      const currentItems = Array.from(libUl.querySelectorAll("li"));
+      const myIdx = currentItems.indexOf(li);
+      selectBook(myIdx);
+    });
+
+    libUl.appendChild(li);
+
+    const counter = document.querySelector('.panel[aria-label="Library"] .panel-label .counter');
+    if (counter) {
+      counter.textContent = `${BOOK_TEXTS.length} books`;
+    }
+
+    selectBook(BOOK_TEXTS.length - 1);
+    li.focus();
+  }
+
+  const fileUpload = document.getElementById("file-upload");
+  fileUpload.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const title = file.name.replace(/\.[^/.]+$/, "");
+    const ext = file.name.split('.').pop().toLowerCase();
+
+    if (ext === "txt" || ext === "md") {
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        addBookToLibrary(title, evt.target.result);
+      };
+      reader.readAsText(file);
+    } else {
+      const mockText = `This is a mockup preview of "${file.name}". In the fully-deployed self-hosted flick, your uploaded PDFs and EPUBs are processed server-side into a beautiful paced timeline! Currently viewing a guest preview.`;
+      addBookToLibrary(title, mockText);
+    }
+    fileUpload.value = "";
   });
 
   loadBook(0);
