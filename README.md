@@ -51,9 +51,9 @@ flowchart TD
     subgraph clients["clients — each speaks CONTRACTS.md"]
         web["<b>flick-web</b><br/>Svelte 5 · the reference client"]
         ext["browser extension<br/><i>· later</i>"]
-        admin["<b>flick-admin</b><br/>corepanel · operators"]
+        admin["<b>flick-admin</b><br/>operators"]
     end
-    landing["<b>flick-landing</b><br/>Astro · myflick.app"]
+    landing["landing/ in flick-web<br/>Astro · myflick.app"]
 
     web -- "HTTP/JSON · /api" --> server
     ext -. "HTTP/JSON · /api" .-> server
@@ -83,10 +83,8 @@ Small, single-purpose, one contract. Every repo tests on every push; tagging `vX
 |---|---|---|
 | **flick** (this one) | Umbrella: docs, [contract](docs/CONTRACTS.md), installer, Compose, [legal](docs/legal) | [![release](https://img.shields.io/github/v/release/one-more-refactor/flick?label=&labelColor=111111&color=f2ede5)](https://github.com/one-more-refactor/flick/releases/latest) |
 | [**flick-backend**](https://github.com/one-more-refactor/flick-backend) | Rust — engine (`flick-core`) + API server (`flick-server`) | [![release](https://img.shields.io/github/v/release/one-more-refactor/flick-backend?label=&labelColor=111111&color=f2ede5)](https://github.com/one-more-refactor/flick-backend/releases/latest) |
-| [**flick-web**](https://github.com/one-more-refactor/flick-web) | Svelte 5 web client — the reference implementation | [![release](https://img.shields.io/github/v/release/one-more-refactor/flick-web?label=&labelColor=111111&color=f2ede5)](https://github.com/one-more-refactor/flick-web/releases/latest) |
-| [**flick-landing**](https://github.com/one-more-refactor/flick-landing) | Astro site behind [myflick.app](https://myflick.app) | [![release](https://img.shields.io/github/v/release/one-more-refactor/flick-landing?label=&labelColor=111111&color=f2ede5)](https://github.com/one-more-refactor/flick-landing/releases/latest) |
-| [**flick-admin**](https://github.com/one-more-refactor/flick-admin) | Operator panel — analytics, users, events, announcements | [![release](https://img.shields.io/github/v/release/one-more-refactor/flick-admin?label=&labelColor=111111&color=f2ede5)](https://github.com/one-more-refactor/flick-admin/releases/latest) |
-| [**corepanel**](https://github.com/one-more-refactor/corepanel) | The generic admin-panel toolkit flick-admin is built on (MIT) | [![release](https://img.shields.io/github/v/release/one-more-refactor/corepanel?label=&labelColor=111111&color=f2ede5)](https://github.com/one-more-refactor/corepanel/releases/latest) |
+| [**flick-web**](https://github.com/one-more-refactor/flick-web) | Svelte 5 web client — the reference implementation, plus the Astro marketing site in `landing/` (MIT, formerly flick-landing) | [![release](https://img.shields.io/github/v/release/one-more-refactor/flick-web?label=&labelColor=111111&color=f2ede5)](https://github.com/one-more-refactor/flick-web/releases/latest) |
+| [**flick-admin**](https://github.com/one-more-refactor/flick-admin) | Operator panel — analytics, users, events, announcements (the corepanel toolkit lives in-tree since 1.1) | [![release](https://img.shields.io/github/v/release/one-more-refactor/flick-admin?label=&labelColor=111111&color=f2ede5)](https://github.com/one-more-refactor/flick-admin/releases/latest) |
 
 ## Privacy, licence, contributing
 
