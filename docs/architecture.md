@@ -17,9 +17,8 @@ one-more-refactor/
 ├── flick           umbrella — docs, contract, installer, compose, legal   (this repo)
 ├── flick-backend   Rust — flick-core (engine) + flick-server (axum API)
 ├── flick-web       Svelte 5 — the reference web client
-├── flick-admin     the server admin panel (own service, own port)
-├── corepanel       generic admin-panel toolkit flick-admin is built on (MIT)
-└── flick-landing   Astro — the marketing site (myflick.app, hosted-only)
+├── flick-web/landing  Astro — the marketing site (myflick.app), MIT subtree of flick-web
+└── flick-admin     the server admin panel (own service, own port; corepanel toolkit in-tree)
 ```
 
 ```mermaid
@@ -29,7 +28,7 @@ flowchart LR
         admin["flick-admin<br/>operators"]
         ext["extension<br/><i>later</i>"]
     end
-    landing["flick-landing"] -- "CTA" --> web
+    landing["landing/ (in flick-web)"] -- "CTA" --> web
     web -- "/api · cookie session" --> server
     admin -- "/api/admin · bearer" --> server
     ext -. "/api" .-> server
@@ -173,8 +172,8 @@ edition only governs limits and billing surface.
 ## Admin surface
 
 The panel is a separate client on a separate origin
-([flick-admin](https://github.com/one-more-refactor/flick-admin), built on
-[corepanel](https://github.com/one-more-refactor/corepanel)); the server side is
+([flick-admin](https://github.com/one-more-refactor/flick-admin), with the
+corepanel toolkit merged in-tree at `src/lib/`); the server side is
 `/api/admin/*` — bearer-only (env token or 12 h admin sessions of `is_admin`
 users), 404 until either exists. What it manages: analytics aggregates, users,
 events, and the announcement banner that `/api/meta` hands to every visitor.
@@ -199,13 +198,11 @@ flowchart LR
     u -- "myflick.app · app.myflick.app" --> cf
     o -- "admin.myflick.app" --> cf
     subgraph box["cool-server · rootless podman, loopback only"]
-        cfd["cloudflared"] --> l["flick-landing<br/>:3012 nginx"]
-        cfd --> b["flick-backend<br/>:3011 axum + web dist"]
+        cfd["cloudflared"] --> b["flick-backend<br/>:3011 axum · landing at / + app at /app"]
         cfd --> a["flick-admin<br/>:3013 nginx"]
         a -- "/api over flick.network" --> b
         b --- v[("volume flick-data<br/>SQLite")]
         t["flick-update.timer<br/>every 15 min"] -. "ghcr digest → podman pull → restart" .- b
-        t -.- l
         t -.- a
         bk["flick-backup.timer<br/>nightly sqlite .backup ×14"] -.- v
     end
