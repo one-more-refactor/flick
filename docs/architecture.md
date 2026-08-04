@@ -28,7 +28,7 @@ flowchart LR
         admin["flick-admin<br/>operators"]
         ext["extension<br/><i>later</i>"]
     end
-    landing["landing/ (in flick-web)"] -- "CTA" --> web
+    landing["native landing view"] -- "Start reading" --> web
     web -- "/api · cookie session" --> server
     admin -- "/api/admin · bearer" --> server
     ext -. "/api" .-> server
@@ -195,7 +195,7 @@ flowchart LR
     subgraph cloudflare
         cf["Cloudflare Tunnel"]
     end
-    u -- "myflick.app · app.myflick.app" --> cf
+    u -- "myflick.app (app.myflick.app 308s here)" --> cf
     o -- "admin.myflick.app" --> cf
     subgraph box["cool-server · rootless podman, loopback only"]
         cfd["cloudflared"] --> b["flick-backend<br/>:3011 axum · landing at / + app at /app"]
