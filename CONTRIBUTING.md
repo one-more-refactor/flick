@@ -36,7 +36,7 @@ keep [`docs/CONTRACTS.md`](docs/CONTRACTS.md) (here, in the umbrella) as the
 shared source of truth:
 
 - [**flick-backend**](https://github.com/one-more-refactor/flick-backend) — the engine (`flick-core`) and API server (`flick-server`).
-- [**flick-web**](https://github.com/one-more-refactor/flick-web) — the Svelte web client, with the Astro marketing site in `landing/`.
+- [**flick-web**](https://github.com/one-more-refactor/flick-web) — the Svelte web client; the marketing landing is a native, i18n'd view of the same app.
 - [**flick-admin**](https://github.com/one-more-refactor/flick-admin) — the server admin panel (the corepanel toolkit lives in-tree at `src/lib/`).
 
 ## Verify
