@@ -247,7 +247,11 @@
       <li role="option" aria-selected="false" tabindex="0"><span class="idx">03</span><span class="title">Flatland</span><span class="leader"></span><span class="pct">00%</span></li>
       <li role="option" aria-selected="false" tabindex="0"><span class="idx">04</span><span class="title">Walden</span><span class="leader"></span><span class="pct">91%</span></li>
     </ul>
-    <div class="hint"><kbd>↑</kbd> <kbd>↓</kbd> select · <kbd>enter</kbd> read · <kbd>a</kbd> add book (pdf)</div>
+    <div class="hint">
+      <kbd>↑</kbd> <kbd>↓</kbd> select · <kbd>enter</kbd> read ·
+      <button id="add-btn" class="add-book-btn" aria-label="Add book from TXT file" style="background: none; border: none; color: inherit; font: inherit; padding: 0; cursor: pointer; text-decoration: underline; text-transform: inherit; letter-spacing: inherit;"><kbd>a</kbd> add book (.txt)</button>
+    </div>
+    <input type="file" id="file-input" accept=".txt" style="display: none;" aria-hidden="true">
   </section>
 
   <!-- TOKENS -->
@@ -332,8 +336,10 @@
   playBtn.addEventListener("click", () => playing ? stop() : start());
   wpmInput.addEventListener("input", () => { wpmVal.textContent = wpmInput.value; });
 
-  const libItems = document.querySelectorAll(".lib li");
+  const libList = document.querySelector(".lib");
+  let libItems = Array.from(libList.querySelectorAll("li"));
   let selectedIdx = 0;
+
   function loadBook(idx) {
     words = BOOK_TEXTS[idx].split(/\s+/);
     const pct = parseInt(libItems[idx].querySelector(".pct").textContent) / 100;
@@ -341,6 +347,7 @@
     if (i >= words.length) i = 0;
     show(i);
   }
+
   function selectBook(idx) {
     stop();
     libItems[selectedIdx].classList.remove("sel");
@@ -350,18 +357,108 @@
     libItems[selectedIdx].setAttribute("aria-selected", "true");
     loadBook(idx);
   }
-  libItems.forEach((li, idx) => {
+
+  function bindLibItemEvents(li, idx) {
     li.addEventListener("click", () => selectBook(idx));
+  }
+
+  libItems.forEach((li, idx) => {
+    bindLibItemEvents(li, idx);
   });
+
+  // 'Add Book' interactive flow implementation
+  const addBtn = document.getElementById("add-btn");
+  const fileInput = document.getElementById("file-input");
+
+  addBtn.addEventListener("click", () => {
+    fileInput.click();
+  });
+
+  fileInput.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+      const text = evt.target.result;
+      if (!text || !text.trim()) return;
+
+      const title = file.name.replace(/\.[^/.]+$/, ""); // Strip file extension
+      BOOK_TEXTS.push(text);
+
+      const newIdx = BOOK_TEXTS.length - 1;
+      const idxString = String(newIdx + 1).padStart(2, "0");
+
+      const li = document.createElement("li");
+      li.setAttribute("role", "option");
+      li.setAttribute("aria-selected", "false");
+      li.setAttribute("tabindex", "0");
+
+      const idxSpan = document.createElement("span");
+      idxSpan.className = "idx";
+      idxSpan.textContent = idxString;
+
+      const titleSpan = document.createElement("span");
+      titleSpan.className = "title";
+      titleSpan.textContent = title;
+
+      const leaderSpan = document.createElement("span");
+      leaderSpan.className = "leader";
+
+      const pctSpan = document.createElement("span");
+      pctSpan.className = "pct";
+      pctSpan.textContent = "00%";
+
+      li.appendChild(idxSpan);
+      li.appendChild(titleSpan);
+      li.appendChild(leaderSpan);
+      li.appendChild(pctSpan);
+
+      libList.appendChild(li);
+
+      // Re-evaluate list items
+      libItems = Array.from(libList.querySelectorAll("li"));
+
+      // Update book count label
+      const counterEl = libList.previousElementSibling.querySelector(".counter");
+      if (counterEl) {
+        counterEl.textContent = libItems.length + " books";
+      }
+
+      bindLibItemEvents(li, newIdx);
+      selectBook(newIdx);
+
+      // Reset file input so same file can be uploaded again if needed
+      fileInput.value = "";
+    };
+    reader.readAsText(file);
+  });
+
   document.addEventListener("keydown", (e) => {
+    // Avoid hijacking key events when focused on form elements / interactive controls like inputs or sliders
+    const activeEl = document.activeElement;
+    const isFocusableInput = activeEl && (
+      activeEl.tagName === "INPUT" ||
+      activeEl.tagName === "TEXTAREA" ||
+      activeEl.tagName === "SELECT" ||
+      activeEl.isContentEditable
+    );
+
     if (e.key === "ArrowDown") {
+      if (isFocusableInput) return;
       e.preventDefault(); selectBook((selectedIdx + 1) % libItems.length); libItems[selectedIdx].focus();
     } else if (e.key === "ArrowUp") {
+      if (isFocusableInput) return;
       e.preventDefault(); selectBook((selectedIdx - 1 + libItems.length) % libItems.length); libItems[selectedIdx].focus();
-    } else if (e.key === "Enter" && document.activeElement && document.activeElement.tagName === "LI") {
+    } else if (e.key === "Enter" && activeEl && activeEl.tagName === "LI") {
       e.preventDefault(); playing ? stop() : start();
     } else if (e.code === "Space") {
+      if (isFocusableInput) return;
       e.preventDefault(); playing ? stop() : start();
+    } else if (e.key === "a" || e.key === "A") {
+      if (isFocusableInput) return;
+      e.preventDefault();
+      addBtn.click();
     }
   });
 
