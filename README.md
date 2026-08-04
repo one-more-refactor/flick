@@ -53,7 +53,7 @@ flowchart TD
         ext["browser extension<br/><i>· later</i>"]
         admin["<b>flick-admin</b><br/>operators"]
     end
-    landing["landing/ in flick-web<br/>Astro · myflick.app"]
+    landing["native landing view<br/>myflick.app"]
 
     web -- "HTTP/JSON · /api" --> server
     ext -. "HTTP/JSON · /api" .-> server
