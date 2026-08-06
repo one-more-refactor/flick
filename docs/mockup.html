@@ -354,6 +354,10 @@
     li.addEventListener("click", () => selectBook(idx));
   });
   document.addEventListener("keydown", (e) => {
+    const activeTag = document.activeElement ? document.activeElement.tagName : "";
+    if (["INPUT", "TEXTAREA", "SELECT", "BUTTON"].includes(activeTag)) {
+      return;
+    }
     if (e.key === "ArrowDown") {
       e.preventDefault(); selectBook((selectedIdx + 1) % libItems.length); libItems[selectedIdx].focus();
     } else if (e.key === "ArrowUp") {
