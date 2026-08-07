@@ -258,10 +258,12 @@
     <span class="tok"><span class="chip" style="background:#8A8380"></span>warm grey</span>
     <span class="tok">mono · both themes · red only accent</span>
   </footer>
+
+  <input type="file" id="file-input" accept=".txt,.md,.pdf,.epub" style="display: none;">
 </div>
 
 <script>
-  const BOOK_TEXTS = [
+  let BOOK_TEXTS = [
     "Sun Tzu said: The art of war is of vital importance to the State. It is a matter of life and death, a road either to safety or to ruin. Hence it is a subject of inquiry which can on no account be neglected.",
     "Do not waste what remains of your life in speculating about your neighbors, unless with a view to some mutual benefit. To do so is to lose the opportunity of doing something else.",
     "I call our world Flatland, not because we call it so, but to make its nature clearer to you, my happy readers, who are privileged to live in Space.",
@@ -332,37 +334,121 @@
   playBtn.addEventListener("click", () => playing ? stop() : start());
   wpmInput.addEventListener("input", () => { wpmVal.textContent = wpmInput.value; });
 
-  const libItems = document.querySelectorAll(".lib li");
+  const getLibItems = () => document.querySelectorAll(".lib li");
+  const libContainer = document.querySelector(".lib");
   let selectedIdx = 0;
+
   function loadBook(idx) {
+    const items = getLibItems();
     words = BOOK_TEXTS[idx].split(/\s+/);
-    const pct = parseInt(libItems[idx].querySelector(".pct").textContent) / 100;
+    const pct = parseInt(items[idx].querySelector(".pct").textContent) / 100;
     i = Math.floor(words.length * pct);
     if (i >= words.length) i = 0;
     show(i);
   }
+
   function selectBook(idx) {
     stop();
-    libItems[selectedIdx].classList.remove("sel");
-    libItems[selectedIdx].setAttribute("aria-selected", "false");
+    const items = getLibItems();
+    items[selectedIdx].classList.remove("sel");
+    items[selectedIdx].setAttribute("aria-selected", "false");
     selectedIdx = idx;
-    libItems[selectedIdx].classList.add("sel");
-    libItems[selectedIdx].setAttribute("aria-selected", "true");
+    items[selectedIdx].classList.add("sel");
+    items[selectedIdx].setAttribute("aria-selected", "true");
     loadBook(idx);
   }
-  libItems.forEach((li, idx) => {
-    li.addEventListener("click", () => selectBook(idx));
+
+  libContainer.addEventListener("click", (e) => {
+    const li = e.target.closest("li");
+    if (li && libContainer.contains(li)) {
+      const idx = Array.from(getLibItems()).indexOf(li);
+      if (idx !== -1) selectBook(idx);
+    }
   });
+
   document.addEventListener("keydown", (e) => {
+    if (document.activeElement && (
+      document.activeElement.tagName === "INPUT" ||
+      document.activeElement.tagName === "TEXTAREA" ||
+      document.activeElement.tagName === "SELECT" ||
+      document.activeElement.tagName === "BUTTON"
+    )) {
+      return;
+    }
+    const items = getLibItems();
     if (e.key === "ArrowDown") {
-      e.preventDefault(); selectBook((selectedIdx + 1) % libItems.length); libItems[selectedIdx].focus();
+      e.preventDefault(); selectBook((selectedIdx + 1) % items.length); items[selectedIdx].focus();
     } else if (e.key === "ArrowUp") {
-      e.preventDefault(); selectBook((selectedIdx - 1 + libItems.length) % libItems.length); libItems[selectedIdx].focus();
+      e.preventDefault(); selectBook((selectedIdx - 1 + items.length) % items.length); items[selectedIdx].focus();
     } else if (e.key === "Enter" && document.activeElement && document.activeElement.tagName === "LI") {
       e.preventDefault(); playing ? stop() : start();
     } else if (e.code === "Space") {
       e.preventDefault(); playing ? stop() : start();
+    } else if (e.key === "a" || e.key === "A") {
+      e.preventDefault();
+      document.getElementById("file-input").click();
     }
+  });
+
+  const fileInput = document.getElementById("file-input");
+  fileInput.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      let content = evt.target.result;
+      if (!content || typeof content !== "string" || content.trim().length === 0) {
+        content = "This is a mockup preview of the uploaded book: " + file.name + ". Reading PDFs and EPUBs is supported in the full self-hosted and hosted version of flick!";
+      }
+
+      let titleText = file.name.replace(/\.[^/.]+$/, "");
+      if (titleText.length > 25) {
+        titleText = titleText.slice(0, 22) + "...";
+      }
+
+      BOOK_TEXTS.push(content);
+
+      const li = document.createElement("li");
+      li.setAttribute("role", "option");
+      li.setAttribute("aria-selected", "false");
+      li.setAttribute("tabindex", "0");
+
+      const idxSpan = document.createElement("span");
+      idxSpan.className = "idx";
+      const itemsCount = getLibItems().length + 1;
+      idxSpan.textContent = String(itemsCount).padStart(2, "0");
+
+      const titleSpan = document.createElement("span");
+      titleSpan.className = "title";
+      titleSpan.textContent = titleText;
+
+      const leaderSpan = document.createElement("span");
+      leaderSpan.className = "leader";
+
+      const pctSpan = document.createElement("span");
+      pctSpan.className = "pct";
+      pctSpan.textContent = "00%";
+
+      li.appendChild(idxSpan);
+      li.appendChild(titleSpan);
+      li.appendChild(leaderSpan);
+      li.appendChild(pctSpan);
+
+      libContainer.appendChild(li);
+
+      const counterEl = libContainer.previousElementSibling.querySelector(".counter");
+      if (counterEl) {
+        counterEl.textContent = itemsCount + " books";
+      }
+
+      selectBook(itemsCount - 1);
+      li.focus();
+
+      fileInput.value = "";
+    };
+
+    reader.readAsText(file);
   });
 
   loadBook(0);
