@@ -5,3 +5,7 @@
 ## 2026-07-28 - Raycast-Style Keycap Hints for Monospace Interfaces
 **Learning:** Monospace terminal/minimalist web mockups can feel text-heavy and make keyboard-navigable shortcuts obscure. Semantic `<kbd>` tags with high-contrast, square-corner, 1px/2px offset borders establish a strong visual metaphor of hardware keycaps, making accessibility controls instantly recognizable to power users without relying on distracting icons or colors.
 **Action:** Use a no-radius, high-contrast, double-layered bottom border `<kbd>` keycap pattern to elevate discoverability of keyboard commands in monospace design systems.
+
+## 2026-07-29 - Event Delegation for Dynamic Items in Minimalist Listbox Mockups
+**Learning:** Adding dynamic element creation to static mockup templates breaks static queries like `querySelectorAll` and requires manually rebinding listeners, which can easily drift. Combining event delegation with dynamic function-based DOM querying keeps active indices, list focus, and option selectors fully synchronized without complex state managers.
+**Action:** Use dynamic element querying combined with container-level event delegation to handle interactive list states when implementing client-side item insertion.
