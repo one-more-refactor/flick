@@ -366,6 +366,7 @@ others. Everything not listed is unlimited.
 | `POST /api/import/url` | 30 / hour |
 | `POST /api/friends/add` | 30 / 5 min |
 | `POST /api/admin/login` | 10 / 5 min |
+| `POST /mcp` | 300 / hour |
 
 - Exceeding a limit → `429` with the standard `{"error": "..."}` body and a
   `Retry-After` header (whole seconds until the window resets).
@@ -376,6 +377,57 @@ others. Everything not listed is unlimited.
   address itself is the key.
 - Fixed window means a worst-case 2× burst across a window boundary — fine
   for abuse resistance; this is not traffic shaping.
+- The MCP `import_url` tool charges the **`import_url` bucket**, not the
+  `/mcp` one — MCP is another door onto the same outbound fetcher, never a
+  second allowance.
+
+## Agent surface (v1.4)
+
+Machine-facing discovery, served by flick-server from documents embedded in
+the binary and rendered against `FLICK_PUBLIC_URL`, so every self-hosted
+instance advertises itself correctly with no extra configuration. Full
+rationale in [`docs/AGENTS.md`](AGENTS.md).
+
+| Path | Content-Type |
+|---|---|
+| `/.well-known/api-catalog` | `application/linkset+json` (RFC 9727/9264) |
+| `/openapi.json` | `application/json` — OpenAPI 3.1, `service-desc` |
+| `/docs/api` | `text/markdown` — `service-doc` |
+| `/auth.md` | `text/markdown` — agent auth, with an `agent_auth` block |
+| `/.well-known/mcp/server-card.json` | `application/json` — SEP-1649 |
+| `/.well-known/agent-skills/index.json` | `application/json` — Discovery v0.2.0 |
+| `/.well-known/agent-skills/{name}/SKILL.md` | `text/markdown` |
+| `/mcp` | JSON-RPC 2.0 over HTTP POST |
+
+- Every **HTML** response carries a `Link` header (RFC 8288) with
+  `api-catalog`, `service-desc`, `service-doc`, `service-meta` (the MCP card),
+  two `describedby` (`llms.txt`, the skills index) and `license`. API and
+  asset responses do not.
+- Anything else under `/.well-known/` is a **JSON 404**, never the SPA shell.
+- **Markdown negotiation**: `GET /` and `GET /science` return `text/markdown`
+  with `x-markdown-tokens` and `Vary: Accept` when the request sends an
+  explicit `Accept: text/markdown`. A wildcard `*/*` or a browser's default
+  `Accept` must keep getting HTML.
+- **Skill digests** are `sha256:{hex}` over the *rendered* bytes actually
+  served — they change with the public URL, and the tests recompute them.
+- **MCP** implements revision `2025-06-18`, tools only, answered as one JSON
+  body (no SSE). Public tools: `preview_timeline`, `list_catalog`,
+  `server_info`. Session tools (`flick_session` cookie): `search_library`,
+  `get_book_text`, `save_text`, `import_url`, `reading_stats`. Tool failures
+  are results with `isError: true`; only protocol failures are JSON-RPC
+  errors. `/mcp` is **not** in the CORS allow-list — with a `SameSite=Lax`
+  cookie that keeps a hostile page from driving a signed-in user's library.
+- **No OAuth metadata is published.** flick is an OIDC client, not an
+  authorization server: federated logins are exchanged for a first-party
+  session cookie and the provider's tokens are never accepted as API
+  credentials. `/auth.md` documents the real mechanism and says so.
+- `robots.txt` declares `Content-Signal: ai-train=yes, search=yes,
+  ai-input=yes` — a deliberate position for an AGPL project whose site is its
+  own documentation.
+- The web client publishes WebMCP tools via
+  `navigator.modelContext.provideContext()` when the browser has it, covering
+  the actions the HTTP API cannot do from outside (open a book in *this*
+  reader, change the running speed). Feature-detected; a no-op otherwise.
 
 ## Admin API & panel (v0.10)
 
