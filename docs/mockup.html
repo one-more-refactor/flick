@@ -243,9 +243,9 @@
     <div class="panel-label"><span>Library</span><span class="counter">4 books</span></div>
     <ul class="lib" role="listbox" aria-label="Books list">
       <li class="sel" role="option" aria-selected="true" tabindex="0"><span class="idx">01</span><span class="title">The Art of War</span><span class="leader"></span><span class="pct">62%</span></li>
-      <li role="option" aria-selected="false" tabindex="0"><span class="idx">02</span><span class="title">Meditations</span><span class="leader"></span><span class="pct">18%</span></li>
-      <li role="option" aria-selected="false" tabindex="0"><span class="idx">03</span><span class="title">Flatland</span><span class="leader"></span><span class="pct">00%</span></li>
-      <li role="option" aria-selected="false" tabindex="0"><span class="idx">04</span><span class="title">Walden</span><span class="leader"></span><span class="pct">91%</span></li>
+      <li role="option" aria-selected="false" tabindex="-1"><span class="idx">02</span><span class="title">Meditations</span><span class="leader"></span><span class="pct">18%</span></li>
+      <li role="option" aria-selected="false" tabindex="-1"><span class="idx">03</span><span class="title">Flatland</span><span class="leader"></span><span class="pct">00%</span></li>
+      <li role="option" aria-selected="false" tabindex="-1"><span class="idx">04</span><span class="title">Walden</span><span class="leader"></span><span class="pct">91%</span></li>
     </ul>
     <div class="hint"><kbd>↑</kbd> <kbd>↓</kbd> select · <kbd>enter</kbd> read · <kbd>a</kbd> add book (pdf)</div>
   </section>
@@ -345,20 +345,31 @@
     stop();
     libItems[selectedIdx].classList.remove("sel");
     libItems[selectedIdx].setAttribute("aria-selected", "false");
+    libItems[selectedIdx].setAttribute("tabindex", "-1");
     selectedIdx = idx;
     libItems[selectedIdx].classList.add("sel");
     libItems[selectedIdx].setAttribute("aria-selected", "true");
+    libItems[selectedIdx].setAttribute("tabindex", "0");
     loadBook(idx);
   }
   libItems.forEach((li, idx) => {
     li.addEventListener("click", () => selectBook(idx));
   });
   document.addEventListener("keydown", (e) => {
+    const active = document.activeElement;
+    if (active && (
+      active.tagName === "INPUT" ||
+      active.tagName === "TEXTAREA" ||
+      active.tagName === "BUTTON" ||
+      active.tagName === "SELECT"
+    )) {
+      return;
+    }
     if (e.key === "ArrowDown") {
       e.preventDefault(); selectBook((selectedIdx + 1) % libItems.length); libItems[selectedIdx].focus();
     } else if (e.key === "ArrowUp") {
       e.preventDefault(); selectBook((selectedIdx - 1 + libItems.length) % libItems.length); libItems[selectedIdx].focus();
-    } else if (e.key === "Enter" && document.activeElement && document.activeElement.tagName === "LI") {
+    } else if (e.key === "Enter" && active && active.tagName === "LI") {
       e.preventDefault(); playing ? stop() : start();
     } else if (e.code === "Space") {
       e.preventDefault(); playing ? stop() : start();
