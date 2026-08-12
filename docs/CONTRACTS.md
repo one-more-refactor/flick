@@ -365,6 +365,7 @@ others. Everything not listed is unlimited.
 | `POST /api/auth/guest` | 20 / hour |
 | `POST /api/import/url` | 30 / hour |
 | `POST /api/friends/add` | 30 / 5 min |
+| `POST /api/shared/{token}/import` | 60 / hour |
 | `POST /api/admin/login` | 10 / 5 min |
 | `POST /mcp` | 300 / hour |
 
@@ -390,6 +391,10 @@ others. Everything not listed is unlimited.
   per-account lockout behind it.
 - Fixed window means a worst-case 2× burst across a window boundary — fine
   for abuse resistance; this is not traffic shaping.
+- `POST /api/shared/{token}/import` charges no upload allowance by design, so
+  its bucket is the only ceiling on it. The import is idempotent: re-importing
+  a link you already took returns the copy in your library rather than a
+  second one (matched on source + title + word count).
 - The MCP `import_url` tool charges the **`import_url` bucket**, not the
   `/mcp` one — MCP is another door onto the same outbound fetcher, never a
   second allowance.
