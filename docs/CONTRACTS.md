@@ -370,11 +370,24 @@ others. Everything not listed is unlimited.
 
 - Exceeding a limit → `429` with the standard `{"error": "..."}` body and a
   `Retry-After` header (whole seconds until the window resets).
-- **Client key = client IP.** The FIRST `X-Forwarded-For` entry is trusted
-  ONLY when the direct peer is a private/loopback address (loopback, RFC1918,
-  100.64/10 CGNAT/tailnet, `::1`, `fc00::/7`) — i.e. the reverse proxy
-  (Caddy) in front; from any public peer the header is ignored and the peer
-  address itself is the key.
+- **Client key = client IP.** `X-Forwarded-For` is trusted ONLY when the
+  direct peer is a private/loopback address (loopback, RFC1918, 100.64/10
+  CGNAT/tailnet, `::1`, `fc00::/7`) — i.e. the reverse proxy (Caddy) in
+  front; from any public peer the header is ignored and the peer address
+  itself is the key.
+- The header is read **right-to-left**: proxies append, so the rightmost
+  entries are the ones our own infrastructure added. The key is the first
+  address from the right that is not itself a trusted-proxy address — the
+  closest hop we did not add. (Taking the leftmost entry would let any caller
+  choose their own bucket by sending the header.)
+- `CF-Connecting-IP` overrides `X-Forwarded-For`, but **only** when
+  `FLICK_TRUST_CF_CONNECTING_IP` is set. Cloudflare's edge sets that header
+  and strips any client-supplied copy, so it is authoritative behind
+  Cloudflare and forgeable everywhere else; a plain reverse proxy passes it
+  through untouched. Leaving it off behind Cloudflare costs accuracy (all
+  tunnel traffic shares the loopback peer's bucket); turning it on without
+  Cloudflare in front removes the login throttle entirely, since there is no
+  per-account lockout behind it.
 - Fixed window means a worst-case 2× burst across a window boundary — fine
   for abuse resistance; this is not traffic shaping.
 - The MCP `import_url` tool charges the **`import_url` bucket**, not the
@@ -497,6 +510,7 @@ User JSON (`/api/auth/me`) gains `"is_admin": bool`.
 | `FLICK_ADMIN_TOKEN` | break-glass bearer for `/api/admin/*` (see Admin API) | — |
 | `FLICK_ADMIN_ORIGIN` | admin panel origin allowed via CORS (e.g. `https://admin.myflick.app`) | — |
 | `FLICK_ADMIN_URL` | admin panel URL surfaced in `/api/meta` for the ADMIN menu link | — |
+| `FLICK_TRUST_CF_CONNECTING_IP` | believe `CF-Connecting-IP` for the client IP — set this **only** when Cloudflare terminates in front (see Rate limits) | off |
 
 SPA fallback: unknown non-`/api` GET paths serve `index.html` from `FLICK_WEB_DIST`.
 
