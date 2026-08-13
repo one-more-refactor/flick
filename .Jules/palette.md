@@ -5,3 +5,7 @@
 ## 2026-07-28 - Raycast-Style Keycap Hints for Monospace Interfaces
 **Learning:** Monospace terminal/minimalist web mockups can feel text-heavy and make keyboard-navigable shortcuts obscure. Semantic `<kbd>` tags with high-contrast, square-corner, 1px/2px offset borders establish a strong visual metaphor of hardware keycaps, making accessibility controls instantly recognizable to power users without relying on distracting icons or colors.
 **Action:** Use a no-radius, high-contrast, double-layered bottom border `<kbd>` keycap pattern to elevate discoverability of keyboard commands in monospace design systems.
+
+## 2026-08-13 - State-Aware Accessible Mockup Toggles & File Ingestion
+**Learning:** For mockup interfaces (such as speedreaders), state-aware accessibility controls (such as using `aria-pressed` on Play/Pause buttons) are crucial. Furthermore, allowing user-provided text file uploads using `FileReader` in a static mockup, combined with safe DOM manipulation (`textContent` and `document.createElement`), provides an immersive experience while strictly safeguarding against XSS.
+**Action:** Use `aria-pressed` for media playback buttons in mockups and dynamically create elements using safe DOM APIs instead of `innerHTML` to securely render custom file inputs.

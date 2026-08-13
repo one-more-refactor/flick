@@ -230,7 +230,7 @@
     </div>
     <div class="progress"><div class="fill" id="fill"></div></div>
     <div class="controls">
-      <button class="play" id="play">Play</button>
+      <button class="play" id="play" aria-pressed="false" aria-label="Play/Pause speedread">Play</button>
       <div class="wpm-wrap">
         <input type="range" id="wpm" min="150" max="800" step="25" value="350" aria-label="Words per minute">
         <div class="wpm-val"><b id="wpmv">350</b> wpm</div>
@@ -247,7 +247,8 @@
       <li role="option" aria-selected="false" tabindex="-1"><span class="idx">03</span><span class="title">Flatland</span><span class="leader"></span><span class="pct">00%</span></li>
       <li role="option" aria-selected="false" tabindex="-1"><span class="idx">04</span><span class="title">Walden</span><span class="leader"></span><span class="pct">91%</span></li>
     </ul>
-    <div class="hint"><kbd>↑</kbd> <kbd>↓</kbd> select · <kbd>enter</kbd> read · <kbd>a</kbd> add book (pdf)</div>
+    <input type="file" id="file-input" accept=".txt,text/plain" style="display: none;" aria-hidden="true">
+    <div class="hint"><kbd>↑</kbd> <kbd>↓</kbd> select · <kbd>enter</kbd> read · <kbd>a</kbd> <span id="add-btn" style="cursor: pointer; text-decoration: underline;" tabindex="0" role="button" aria-label="Add book">add book (.txt)</span></div>
   </section>
 
   <!-- TOKENS -->
@@ -321,20 +322,23 @@
   function start() {
     playing = true;
     playBtn.textContent = "Pause";
+    playBtn.setAttribute("aria-pressed", "true");
     tick();
   }
   function stop() {
     playing = false;
     clearTimeout(timer);
     playBtn.textContent = "Play";
+    playBtn.setAttribute("aria-pressed", "false");
   }
 
   playBtn.addEventListener("click", () => playing ? stop() : start());
   wpmInput.addEventListener("input", () => { wpmVal.textContent = wpmInput.value; });
 
-  const libItems = document.querySelectorAll(".lib li");
+  const libContainer = document.querySelector(".lib");
   let selectedIdx = 0;
   function loadBook(idx) {
+    const libItems = libContainer.querySelectorAll("li");
     words = BOOK_TEXTS[idx].split(/\s+/);
     const pct = parseInt(libItems[idx].querySelector(".pct").textContent) / 100;
     i = Math.floor(words.length * pct);
@@ -343,6 +347,7 @@
   }
   function selectBook(idx) {
     stop();
+    const libItems = libContainer.querySelectorAll("li");
     libItems[selectedIdx].classList.remove("sel");
     libItems[selectedIdx].setAttribute("aria-selected", "false");
     libItems[selectedIdx].setAttribute("tabindex", "-1");
@@ -352,14 +357,98 @@
     libItems[selectedIdx].setAttribute("tabindex", "0");
     loadBook(idx);
   }
-  libItems.forEach((li, idx) => {
-    li.addEventListener("click", () => selectBook(idx));
+  libContainer.addEventListener("click", (e) => {
+    const li = e.target.closest("li");
+    if (li && libContainer.contains(li)) {
+      const libItems = Array.from(libContainer.querySelectorAll("li"));
+      const idx = libItems.indexOf(li);
+      if (idx !== -1) {
+        selectBook(idx);
+      }
+    }
   });
+  const fileInput = document.getElementById("file-input");
+  const addBtn = document.getElementById("add-btn");
+
+  function triggerFileSelect() {
+    fileInput.click();
+  }
+
+  addBtn.addEventListener("click", triggerFileSelect);
+  addBtn.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.code === "Space") {
+      e.preventDefault();
+      triggerFileSelect();
+    }
+  });
+
+  fileInput.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const text = evt.target.result;
+      if (!text || !text.trim()) return;
+
+      // Clean file name for title
+      let title = file.name.replace(/\.[^/.]+$/, ""); // strip extension
+      if (title.length > 20) title = title.substring(0, 17) + "...";
+
+      // Append new text to BOOK_TEXTS
+      BOOK_TEXTS.push(text);
+      const newIdx = BOOK_TEXTS.length - 1;
+
+      // Create new list item using safe DOM APIs (no innerHTML) to prevent XSS
+      const li = document.createElement("li");
+      li.setAttribute("role", "option");
+      li.setAttribute("aria-selected", "false");
+      li.setAttribute("tabindex", "-1");
+
+      const idxSpan = document.createElement("span");
+      idxSpan.className = "idx";
+      idxSpan.textContent = String(newIdx + 1).padStart(2, "0");
+
+      const titleSpan = document.createElement("span");
+      titleSpan.className = "title";
+      titleSpan.textContent = title;
+
+      const leaderSpan = document.createElement("span");
+      leaderSpan.className = "leader";
+
+      const pctSpan = document.createElement("span");
+      pctSpan.className = "pct";
+      pctSpan.textContent = "00%";
+
+      li.appendChild(idxSpan);
+      li.appendChild(titleSpan);
+      li.appendChild(leaderSpan);
+      li.appendChild(pctSpan);
+
+      libContainer.appendChild(li);
+
+      // Update counter
+      const counterLabel = document.querySelector(".panel[aria-label='Library'] .panel-label .counter");
+      if (counterLabel) {
+        counterLabel.textContent = BOOK_TEXTS.length + " books";
+      }
+
+      // Reset file input value so same file can be uploaded again if needed
+      fileInput.value = "";
+
+      // Select the new book and focus it
+      selectBook(newIdx);
+      li.focus();
+    };
+    reader.readAsText(file);
+  });
+
   document.addEventListener("keydown", (e) => {
     const active = document.activeElement;
     if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.tagName === "BUTTON" || active.isContentEditable)) {
       return;
     }
+    const libItems = libContainer.querySelectorAll("li");
     if (e.key === "ArrowDown") {
       e.preventDefault(); selectBook((selectedIdx + 1) % libItems.length); libItems[selectedIdx].focus();
     } else if (e.key === "ArrowUp") {
@@ -368,6 +457,9 @@
       e.preventDefault(); playing ? stop() : start();
     } else if (e.code === "Space") {
       e.preventDefault(); playing ? stop() : start();
+    } else if (e.key === "a" || e.key === "A") {
+      e.preventDefault();
+      triggerFileSelect();
     }
   });
 
