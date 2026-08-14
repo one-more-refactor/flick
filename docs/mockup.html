@@ -230,7 +230,7 @@
     </div>
     <div class="progress"><div class="fill" id="fill"></div></div>
     <div class="controls">
-      <button class="play" id="play">Play</button>
+      <button class="play" id="play" aria-pressed="false">Play</button>
       <div class="wpm-wrap">
         <input type="range" id="wpm" min="150" max="800" step="25" value="350" aria-label="Words per minute">
         <div class="wpm-val"><b id="wpmv">350</b> wpm</div>
@@ -321,12 +321,14 @@
   function start() {
     playing = true;
     playBtn.textContent = "Pause";
+    playBtn.setAttribute("aria-pressed", "true");
     tick();
   }
   function stop() {
     playing = false;
     clearTimeout(timer);
     playBtn.textContent = "Play";
+    playBtn.setAttribute("aria-pressed", "false");
   }
 
   playBtn.addEventListener("click", () => playing ? stop() : start());
