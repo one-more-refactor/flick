@@ -1,6 +1,13 @@
 <div align="center">
 
+<p align="center"><picture>
+  <source media="(prefers-color-scheme: dark)" srcset=".github/brand/mark-dark.svg">
+  <img src=".github/brand/mark-light.svg" alt="" width="32" height="32">
+</picture></p>
+
 # flick_
+
+<p align="center"><img src=".github/brand/kind-app.svg" alt="kind: app" height="20">&nbsp;<img src=".github/brand/status-live.svg" alt="status: live" height="20"></p>
 
 **read it in a flick** — self-hosted speed reading for PDFs, EPUBs and your read-later pile.
 
@@ -91,3 +98,13 @@ Small, single-purpose, one contract. Every repo tests on every push; tagging `vX
 Pseudonymised IPs, no ad tech, one-click **export** (GDPR Art. 15/20) and **deletion** (Art. 17) — [PRIVACY](docs/legal/PRIVACY.md) · [TERMS](docs/legal/TERMS.md). The hosted service is an AGPL §13 network service, so its complete source is these repos: run a modified flick as a service and you owe your users the same.
 
 [**AGPL-3.0-only**](LICENSE) (the marketing site is MIT; bundled-data attribution in [NOTICE](NOTICE)). House style is strict and load-bearing — **monospace, square corners, one accent, no gradients, glows or shadows.** Read [CONTRIBUTING.md](CONTRIBUTING.md) and [CONTRACTS.md](docs/CONTRACTS.md), and open an issue before a feature PR.
+
+---
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset=".github/brand/lockup-dark.svg">
+  <img src=".github/brand/lockup-light.svg" alt="one more" height="20">
+</picture>
+
+part of [one more](https://github.com/one-more-refactor) — small tools that
+keep their data in plain files and never ask you to make an account.
