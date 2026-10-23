@@ -228,11 +228,11 @@
         <span class="pre">rea</span><span class="orp">d</span><span class="post">ing</span>
       </div>
     </div>
-    <div class="progress"><div class="fill" id="fill"></div></div>
+    <div class="progress" id="progress" role="progressbar" aria-label="Reading progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="fill" id="fill"></div></div>
     <div class="controls">
       <button class="play" id="play">Play</button>
       <div class="wpm-wrap">
-        <input type="range" id="wpm" min="150" max="800" step="25" value="350" aria-label="Words per minute">
+        <input type="range" id="wpm" min="150" max="800" step="25" value="350" aria-label="Words per minute" aria-valuetext="350 words per minute">
         <div class="wpm-val"><b id="wpmv">350</b> wpm</div>
       </div>
     </div>
@@ -289,6 +289,7 @@
 
   const wordEl = document.getElementById("word");
   const fill = document.getElementById("fill");
+  const progress = document.getElementById("progress");
   const count = document.getElementById("count");
   const playBtn = document.getElementById("play");
   const wpmInput = document.getElementById("wpm");
@@ -305,7 +306,9 @@
     wordEl.children[0].textContent = w.slice(0, p);
     wordEl.children[1].textContent = w[p] || "";
     wordEl.children[2].textContent = w.slice(p + 1);
-    fill.style.width = ((idx + 1) / words.length * 100) + "%";
+    const pct = Math.round((idx + 1) / words.length * 100);
+    fill.style.width = pct + "%";
+    progress.setAttribute("aria-valuenow", pct);
     count.textContent = pad(idx + 1) + " / " + pad(words.length);
   }
 
@@ -330,7 +333,10 @@
   }
 
   playBtn.addEventListener("click", () => playing ? stop() : start());
-  wpmInput.addEventListener("input", () => { wpmVal.textContent = wpmInput.value; });
+  wpmInput.addEventListener("input", () => {
+    wpmVal.textContent = wpmInput.value;
+    wpmInput.setAttribute("aria-valuetext", `${wpmInput.value} words per minute`);
+  });
 
   const libItems = document.querySelectorAll(".lib li");
   let selectedIdx = 0;
