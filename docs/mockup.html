@@ -68,6 +68,13 @@
   @keyframes blink { 50% { opacity: 0; } }
   @media (prefers-reduced-motion: reduce) { .wordmark .cursor { animation: none; } }
   .tag { color: var(--dim); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; text-align: right; }
+  .theme-btn {
+    font: inherit; font-size: 10px; letter-spacing: 0.14em;
+    background: transparent; color: var(--dim); border: 1px solid var(--line);
+    padding: 2px 7px; cursor: pointer; text-transform: uppercase;
+  }
+  .theme-btn:hover { color: var(--ink); border-color: var(--dim); }
+  .theme-btn:focus-visible { outline: 2px solid var(--red); outline-offset: 1px; color: var(--ink); }
 
   /* ---------- panels ---------- */
   .panel {
@@ -215,7 +222,10 @@
 <div class="sheet">
   <header>
     <div class="wordmark">READ<span class="cursor">_</span></div>
-    <div class="tag">design mockup<br>web · ios · android · tui</div>
+    <div class="tag">
+      <button id="theme-toggle" class="theme-btn" aria-label="Switch to dark theme">THEME: LIGHT</button><br>
+      design mockup · web · ios · android · tui
+    </div>
   </header>
 
   <!-- READER -->
@@ -247,7 +257,7 @@
       <li role="option" aria-selected="false" tabindex="-1"><span class="idx">03</span><span class="title">Flatland</span><span class="leader"></span><span class="pct">00%</span></li>
       <li role="option" aria-selected="false" tabindex="-1"><span class="idx">04</span><span class="title">Walden</span><span class="leader"></span><span class="pct">91%</span></li>
     </ul>
-    <div class="hint"><kbd>↑</kbd> <kbd>↓</kbd> select · <kbd>enter</kbd> read · <kbd>a</kbd> add book (pdf)</div>
+    <div class="hint"><kbd>↑</kbd> <kbd>↓</kbd> select · <kbd>enter</kbd> read · <kbd>t</kbd> theme · <kbd>a</kbd> add book (pdf)</div>
   </section>
 
   <!-- TOKENS -->
@@ -376,8 +386,27 @@
       e.preventDefault(); playing ? stop() : start();
     } else if (e.code === "Space") {
       e.preventDefault(); playing ? stop() : start();
+    } else if (e.key === "t" || e.key === "T") {
+      e.preventDefault(); toggleTheme();
     }
   });
+
+  const themeBtn = document.getElementById("theme-toggle");
+  function isDarkTheme() {
+    const attr = document.documentElement.getAttribute("data-theme");
+    return attr ? attr === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches;
+  }
+  function updateThemeUI(dark) {
+    themeBtn.textContent = `THEME: ${dark ? "DARK" : "LIGHT"}`;
+    themeBtn.setAttribute("aria-label", `Switch to ${dark ? "light" : "dark"} theme`);
+  }
+  function toggleTheme() {
+    const nextDark = !isDarkTheme();
+    document.documentElement.setAttribute("data-theme", nextDark ? "dark" : "light");
+    updateThemeUI(nextDark);
+  }
+  themeBtn.addEventListener("click", toggleTheme);
+  updateThemeUI(isDarkTheme());
 
   loadBook(0);
 </script>
