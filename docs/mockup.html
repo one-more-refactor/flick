@@ -247,7 +247,7 @@
       <li role="option" aria-selected="false" tabindex="-1"><span class="idx">03</span><span class="title">Flatland</span><span class="leader"></span><span class="pct">00%</span></li>
       <li role="option" aria-selected="false" tabindex="-1"><span class="idx">04</span><span class="title">Walden</span><span class="leader"></span><span class="pct">91%</span></li>
     </ul>
-    <div class="hint"><kbd>↑</kbd> <kbd>↓</kbd> select · <kbd>enter</kbd> read · <kbd>a</kbd> add book (pdf)</div>
+    <div class="hint"><kbd>↑</kbd> <kbd>↓</kbd> select · <kbd>←</kbd> <kbd>→</kbd> speed · <kbd>enter</kbd> read · <kbd>a</kbd> add book (pdf)</div>
   </section>
 
   <!-- TOKENS -->
@@ -334,10 +334,16 @@
     playBtn.setAttribute("aria-label", "Start reading");
   }
 
+  function setWpm(val) {
+    const clamped = Math.max(150, Math.min(800, Math.round(val / 25) * 25));
+    wpmInput.value = clamped;
+    wpmVal.textContent = clamped;
+    wpmInput.setAttribute("aria-valuetext", `${clamped} words per minute`);
+  }
+
   playBtn.addEventListener("click", () => playing ? stop() : start());
   wpmInput.addEventListener("input", () => {
-    wpmVal.textContent = wpmInput.value;
-    wpmInput.setAttribute("aria-valuetext", `${wpmInput.value} words per minute`);
+    setWpm(Number(wpmInput.value));
   });
 
   const libItems = document.querySelectorAll(".lib li");
@@ -376,6 +382,10 @@
       e.preventDefault(); playing ? stop() : start();
     } else if (e.code === "Space") {
       e.preventDefault(); playing ? stop() : start();
+    } else if (e.key === "ArrowLeft") {
+      e.preventDefault(); setWpm(Number(wpmInput.value) - 25);
+    } else if (e.key === "ArrowRight") {
+      e.preventDefault(); setWpm(Number(wpmInput.value) + 25);
     }
   });
 
