@@ -7,13 +7,50 @@
 # Installs/refreshes: the auto-updater (script + user timer), the flick-admin
 # + flick.network Quadlet units, the ingress connector (when a tunnel token is
 # supplied), and prints what still needs a human. It never touches existing
-# secrets (FLICK_ADMIN_TOKEN stays whatever the backend unit already carries).
+# secrets (FLICK_ADMIN_TOKEN stays whatever the backend unit already carries),
+# but it refuses to run at all while that token is the placeholder or short.
 set -eu
 
 SVC="$HOME/services/flick"
 QUAD="$HOME/.config/containers/systemd"
 UNITS="$HOME/.config/systemd/user"
 HERE=$(cd "$(dirname "$0")" && pwd)
+BACKEND="$QUAD/flick-backend.container"
+
+# --- refuse a weak admin token, before changing anything ---------------------
+# The backend accepts any non-empty FLICK_ADMIN_TOKEN, and the committed quadlet
+# ships CHANGE_ME, so a box set up straight from the repo would guard
+# /api/admin/* with a placeholder. Read every place the unit can take the token
+# from (Environment=, EnvironmentFile=, a podman Secret=) and stop if any value
+# is missing, CHANGE_ME or under 32 characters. Make one: openssl rand -hex 32
+admin_tokens() {
+  sed -n 's/^Environment="\{0,1\}FLICK_ADMIN_TOKEN=\([^"]*\)"\{0,1\}[[:space:]]*$/\1/p' "$BACKEND"
+  sed -n 's/^EnvironmentFile=-\{0,1\}//p' "$BACKEND" | while IFS= read -r f; do
+    f=$(printf '%s' "$f" | sed "s|%h|$HOME|g")
+    if [ -r "$f" ]; then
+      sed -n "s/^FLICK_ADMIN_TOKEN=[\"']\{0,1\}\([^\"']*\)[\"']\{0,1\}[[:space:]]*\$/\1/p" "$f"
+    fi
+  done
+  sed -n 's/^Secret=\([^,]*\),.*target=FLICK_ADMIN_TOKEN.*$/\1/p' "$BACKEND" | while IFS= read -r s; do
+    podman secret inspect --showsecret --format '{{.SecretData}}' "$s" 2>/dev/null || true
+  done
+}
+if [ -f "$BACKEND" ]; then
+  tokens=$(admin_tokens)
+  if [ -z "$tokens" ]; then
+    echo "!! no readable FLICK_ADMIN_TOKEN for $BACKEND — set one (openssl rand -hex 32), then re-run." >&2
+    exit 1
+  fi
+  while IFS= read -r t; do
+    if [ "$t" = CHANGE_ME ] || [ "${#t}" -lt 32 ]; then
+      echo "!! FLICK_ADMIN_TOKEN for $BACKEND is CHANGE_ME, empty or under 32 chars." >&2
+      echo "   Replace it with: openssl rand -hex 32   — refusing to continue." >&2
+      exit 1
+    fi
+  done <<EOF
+$tokens
+EOF
+fi
 
 mkdir -p "$SVC" "$QUAD" "$UNITS"
 
@@ -35,7 +72,6 @@ for f in flick.network flick-admin.container; do
 done
 
 # The backend must join flick.network and advertise the panel URL.
-BACKEND="$QUAD/flick-backend.container"
 if [ -f "$BACKEND" ]; then
   grep -q '^Network=flick.network' "$BACKEND" || sed -i '/^ContainerName=/a Network=flick.network' "$BACKEND"
   grep -q 'FLICK_ADMIN_URL' "$BACKEND" || sed -i '/FLICK_ADMIN_TOKEN/a Environment=FLICK_ADMIN_URL=https://admin.myflick.app' "$BACKEND"
